@@ -1,7 +1,10 @@
 #!/usr/bin/python
 #coding:utf-8
 
+import struct
+
 from tcpserver.message import Message
+from libs.functions import hex_str
 
 class MessageHandler(object):
     def __init__(self):
@@ -13,7 +16,7 @@ class LoginHandler(MessageHandler):
         super(LoginHandler, self).__init__()
 
     def handler(self, device, message, serial):
-        imei, device_no = struct.unpack('!8sH', msg[:10])
+        imei, device_no = struct.unpack('!8sH', message[:10])
         imei = hex_str(imei)
 
         device.imei = imei
@@ -21,7 +24,7 @@ class LoginHandler(MessageHandler):
 
         print('receive login', imei, device_no)
 
-        return Message(serial)
+        return Message(LoginHandler.MSG_TYPE, serial)
 
 class GPSInfoHandler(object):
     MSG_TYPE = 0x10
@@ -29,7 +32,7 @@ class GPSInfoHandler(object):
         super(GPSInfoHandler, self).__init__()
     
     def handler(self, device, message, serial):
-        year, month, day, hour, minute, second, gps_info, longtitude, latitude, speed, gps_state = struct.unpack('!BBBBBBBLLBH', msg)
+        year, month, day, hour, minute, second, gps_info, longtitude, latitude, speed, gps_state = struct.unpack('!BBBBBBBLLBH', message)
         date_time = '%d-%d-%d %d:%d:%d' % (year + 2000, month, day, hour, minute, second)
         longtitude = longtitude / 30000
         longtitude = '%dº%f‘' % (longtitude // 60, longtitude % 60)
@@ -48,7 +51,7 @@ class HeartHandler(object):
         super(HeartHandler, self).__init__()
     
     def handler(self, device, message, serial):
-        device_info, battery, signal = struct.unpack('!BBB', msg[:3])
+        device_info, battery, signal = struct.unpack('!BBB', message[:3])
         heart_type = (device_info >> 2) & 0xF
 
         device.battery = battery
@@ -56,7 +59,7 @@ class HeartHandler(object):
 
         print('receive heart', heart_type, battery, signal)
 
-        return Message(serial)
+        return Message(HeartHandler.MSG_TYPE, serial)
 
 class TimeSyncHandler(object):
     MSG_TYPE = 0x1F
@@ -64,11 +67,11 @@ class TimeSyncHandler(object):
         super(TimeSyncHandler, self).__init__()
     
     def handler(self, device, message, serial):
-        year, month, day, hour, minute, second = struct.unpack('!BBBBBB', msg[:6])
+        year, month, day, hour, minute, second = struct.unpack('!BBBBBB', message[:6])
         date_time = '%d-%d-%d %d:%d:%d' % (year + 2000, month, day, hour, minute, second)
 
         print('receive settime', date_time)
 
         data = struct.pack('!LH', int(datetime.datetime.utcnow().timestamp()), 0)
-        return Message(serial, data)
+        return Message(TimeSyncHandler.MSG_TYPE, serial, data)
 

@@ -12,6 +12,7 @@ class Connection(object):
     clients = set()
     def __init__(self, stream, address):
         super(Connection, self).__init__()
+        Connection.clients.add(self)
         self._stream = stream
         self._address = address
         self._stream.set_close_callback(self.on_close)
@@ -20,7 +21,6 @@ class Connection(object):
     def on_close(self):
         print("A user has left the chat room.", self._address)
         Connection.clients.remove(self)
-        
 
 class RobotConnection(Connection):
     _callback_map = {}
@@ -34,8 +34,11 @@ class RobotConnection(Connection):
         self._connect_loop()
 
     def _connect_loop(self):
+        is_sync = True
+
         if self._message.get_state() == Message.MSG_PART: # 读取完整消息
             self._read_data()
+            is_sync = False
         elif self._message.get_state() == Message.MSG_FULL: # 完整消息处理
             if self._sending_message:
                 self._sending_handler(self._message, self._sending_message)
@@ -49,12 +52,14 @@ class RobotConnection(Connection):
             self._stream.write(self._sending_message.get_bytes())
         else: # 监听
             self._read_data()
+            is_sync = False
 
         # 事件处理循环
-        self._connect_loop()
+        if is_sync:
+            self._connect_loop()
 
     def _read_data(self):
-        self._stream.read_until('\r\n', self._read_callback, 1024)
+        self._stream.read_until(b'\r\n', self._read_callback, 1024)
 
     def _read_callback(self, data):
         print(data)
@@ -64,6 +69,8 @@ class RobotConnection(Connection):
             self._message.append_data(data)
         else:
             pass # exception
+
+        self._connect_loop()
 
     def _sending_handler(self, message):
         pass
@@ -81,13 +88,23 @@ class RobotConnection(Connection):
     def send_message(self, message):
         self._send_array.put(message)
 
-
 class GPSServer(TCPServer):
+    def __init__(self):
+        super(GPSServer, self).__init__()
+        GPSServer.register_handler()
+
     def handle_stream(self, stream, address):
         print("New connection :", address, stream)
         RobotConnection(stream, address) 
         print("connection num is:", len(Connection.clients))
 
-    def set_message_handler(self, callback):
-        RobotConnection._callback_map.update({callback.MSG_TYPE: callback()})
+    @staticmethod
+    def register_handler():
+        from tcpserver import handler
+        RobotConnection._callback_map.update({
+            handler.LoginHandler.MSG_TYPE: handler.LoginHandler(),
+            handler.GPSInfoHandler.MSG_TYPE: handler.GPSInfoHandler(),
+            handler.HeartHandler.MSG_TYPE: handler.HeartHandler(),
+            handler.TimeSyncHandler.MSG_TYPE: handler.TimeSyncHandler(),
+        })
 
