@@ -6,7 +6,7 @@ from queue import Queue
 from tornado.tcpserver import TCPServer
 
 from tcpserver.message import Message
-from tcpserver.device import Device
+from tcpserver.device import DeviceInfo
 
 class Connection(object):
     clients = set()
@@ -30,7 +30,7 @@ class RobotConnection(object):
         self._send_array = Queue()
         self._sending_message = None
         self._message = Message()
-        self._device = Device()
+        self._device = DeviceInfo()
         self._connect_loop()
 
     def _connect_loop(self):
