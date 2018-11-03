@@ -22,7 +22,7 @@ class Connection(object):
         Connection.clients.remove(self)
         
 
-class RobotConnection(object):
+class RobotConnection(Connection):
     _callback_map = {}
 
     def __init__(self, stream, address):
@@ -57,6 +57,7 @@ class RobotConnection(object):
         self._stream.read_until('\r\n', self._read_callback, 1024)
 
     def _read_callback(self, data):
+        print(data)
         if self._message.get_state() == Message.MSG_CLEAN: # 读取新消息
             self._message.update_data(data)
         elif self._message.get_state() == Message.MSG_PART: # 读取剩余部分消息
