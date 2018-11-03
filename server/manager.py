@@ -1,44 +1,35 @@
 #!/usr/bin/python
 #coding:utf-8
 
-from tornado.tcpserver import TCPServer
+import click
+
+from tcpserver.server import GPSServer
 from tornado.ioloop  import IOLoop
 
-class Connection(object):
-    clients = set()
-    def __init__(self, stream, address):
-        Connection.clients.add(self)
-        self._stream = stream
-        self._address = address
-        self._stream.set_close_callback(self.on_close)
-        self.read_message()
-        print("A new user has entered the chat room.", address)
-    
-    def read_message(self):
-        self._stream.read_until(bytes('\n', 'utf-8'), self.broadcast_messages)
+@click.group()
+def cli1():
+    pass
 
-    def broadcast_messages(self, data):
-        print("User said:", data[:-1], self._address)
-        for conn in Connection.clients:
-            conn.send_message(data)
-        self.read_message()
-    
-    def send_message(self, data):
-        self._stream.write(data)
-        
-    def on_close(self):
-        print("A user has left the chat room.", self._address)
-        Connection.clients.remove(self)
-
-class ChatServer(TCPServer):
-    def handle_stream(self, stream, address):
-        print("New connection :", address, stream)
-        Connection(stream, address) 
-        print("connection num is:", len(Connection.clients))
-
-
-if __name__=="__main__":
+@cli1.command()
+@click.option('--port', type=int, default=8001, help='service port')
+def location(port):
+    """Command for start location server"""
     print("Server start ......")
-    server = ChatServer()  
-    server.listen(8000)  
+    server = GPSServer()  
+    server.listen(port)  
     IOLoop.instance().start()
+
+@click.group()
+def cli2():
+    pass
+
+@cli2.command()
+@click.option('--port', type=int, default=8002, help='service port')
+def protal(port):
+    """Command for start protal server"""
+    print(port)
+
+cli = click.CommandCollection(sources=[cli1, cli2])
+
+if __name__ == '__main__':
+    cli()
