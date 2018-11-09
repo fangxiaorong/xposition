@@ -326,7 +326,7 @@ public class MainActivity extends AppCompatActivity {
 
             JSONObject object = data.getJSONObject(i);
             viewHolder.userIdTextView.setText(object.getString("id"));
-            viewHolder.userNameTextView.setText(object.getString("name"));
+            viewHolder.userNameTextView.setText(object.getString("username"));
             viewHolder.userScoreTextView.setText(object.getString("score"));
 
             return view;

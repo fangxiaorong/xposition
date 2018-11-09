@@ -415,7 +415,7 @@ class ManagerGetLocations(web.RequestHandler):
                 }))
 
 @app.route(r'/api/manager/track/(\d+)')
-class ManagerGetUserTrack(object):
+class ManagerGetUserTrack(web.RequestHandler):
     def get(self, user_id):
         # with CursorManager() as cursor:
         #     pass
