@@ -1,0 +1,97 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                xmlns:tools="http://schemas.android.com/tools"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                tools:context=".MainActivity" >
+
+    <job.fscience.com.lib.SlidingUpPanelLayout
+            xmlns:sothree="http://schemas.android.com/apk/res-auto"
+            android:id="@+id/sliding_layout"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="bottom"
+            sothree:panelHeight="48dp"
+            sothree:shadowHeight="4dp"
+            sothree:paralaxOffset="100dp"
+            sothree:overlay="false"
+            sothree:dragView="@+id/name">
+
+        <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+            <com.amap.api.maps.MapView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:id="@+id/map" />
+            <TextView
+                    android:id="@+id/head"
+                    android:text="王种子"
+                    android:textSize="24sp"
+                    android:textAlignment="center"
+                    android:padding="10dp"
+                    android:layout_marginHorizontal="30dp"
+                    android:layout_marginTop="10dp"
+                    android:background="@drawable/head_shadow"
+                    android:drawableLeft="@mipmap/ic_launcher"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"/>
+        </RelativeLayout>
+
+        <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="#eeeeee"
+                android:orientation="vertical"
+                android:clickable="true"
+                android:focusable="false">
+
+            <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:orientation="horizontal">
+                <ImageView
+                        android:id="@+id/route"
+                        android:src="@mipmap/route"
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:padding="10dp"/>
+                <ImageView
+                        android:id="@+id/play"
+                        android:src="@mipmap/play"
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:padding="10dp"/>
+                <ImageView
+                        android:id="@+id/attribute"
+                        android:src="@mipmap/attribute"
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:padding="10dp"/>
+                <TextView
+                        android:id="@+id/name"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:textSize="14sp"
+                        android:gravity="center_vertical"
+                        android:paddingLeft="10dp"/>
+                <ImageView
+                        android:id="@+id/delete"
+                        android:src="@mipmap/cancel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:padding="10dp"/>
+
+            </LinearLayout>
+
+            <include android:layout_width="match_parent"
+                     android:layout_height="wrap_content"
+                     layout="@layout/item_user_info_head" />
+            <ListView android:id="@+id/user_list"
+                      android:layout_width="match_parent"
+                      android:layout_height="match_parent">
+            </ListView>
+        </LinearLayout>
+    </job.fscience.com.lib.SlidingUpPanelLayout>
+
+</RelativeLayout>

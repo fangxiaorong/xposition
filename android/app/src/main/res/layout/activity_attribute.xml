@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:orientation="vertical"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent">
+    <TextView
+            android:text="总得分：88"
+            android:textSize="28sp"
+            android:padding="10dp"
+            android:textAlignment="center"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+    <include
+            android:layout_height="wrap_content"
+            android:layout_width="match_parent"
+            layout="@layout/item_user_attribute_head" />
+    <ListView
+            android:id="@+id/attribute"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+</LinearLayout>

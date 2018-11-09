@@ -5,23 +5,24 @@ import android.app.Application;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import job.fscience.com.net.ServerRequest;
 import job.fscience.com.server.PositionService;
 
 public class XApplication extends Application {
 
+    private static Context context = null;
+
     @Override
     public void onCreate() {
         super.onCreate();
-        gpsAlarm();
+
+        XApplication.context = getApplicationContext();
     }
 
-    public void gpsAlarm() {
-        AlarmManager manager = (AlarmManager)getSystemService(Context.ALARM_SERVICE);
-        Intent intent = new Intent(this, PositionService.class);
-        PendingIntent pendingIntent = PendingIntent.getService(this, 0, intent, 0);
-        manager.cancel(pendingIntent);
-        manager.setRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis(), 3000, pendingIntent);
-
-        System.out.println("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+    private static class SingletonRequestHolder {
+        private final static ServerRequest instance = new ServerRequest(XApplication.context);
+    }
+    public static ServerRequest getServerInstance() {
+        return SingletonRequestHolder.instance;
     }
 }
