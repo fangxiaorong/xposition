@@ -9,6 +9,7 @@ import android.widget.Toast;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import job.fscience.com.lib.MacUtils;
+import job.fscience.com.net.ServerRequest;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.Response;
@@ -41,8 +42,10 @@ public class LoginActivity extends AppCompatActivity {
 
             @Override
             public void onResponse(Call call, Response response) throws IOException {
-                JSONObject object = (JSONObject)JSON.parse(response.body().string());
-                if (object.getInteger("state") == 1) {
+                JSONObject object = ServerRequest.parseJSON(response);
+                if (object == null) {
+                    showTextOnUIThread("服务器错误");
+                } else if (object.getInteger("state") == 1) {
                     LoginActivity.userInfo = object.getJSONObject("user");
                     Intent intent = new Intent(LoginActivity.this, PositionActivity.class);
                     LoginActivity.this.startActivity(intent);

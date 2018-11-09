@@ -312,7 +312,7 @@ class GetExamResult(web.RequestHandler):
             ]
         }))
 
-from backends import CursorManager
+from backends import CursorManager, query_user, upload_position, query_line, query_position
 
 class RouteConfig(web.Application):
     def route(self, url):

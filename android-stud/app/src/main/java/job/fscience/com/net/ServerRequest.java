@@ -1,10 +1,11 @@
 package job.fscience.com.net;
 
 import android.content.Context;
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import job.fscience.com.lib.MacUtils;
 import okhttp3.*;
 import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.io.IOException;
 
@@ -13,8 +14,8 @@ public class ServerRequest {
 
     String userId;
 //    String baseUrl = "http://10.0.109.50:8002";
-//    String baseUrl = "http://212.64.26.210:8002";
-    String baseUrl = "http://192.168.48.95:8002";
+    String baseUrl = "http://212.64.26.210:8002";
+//    String baseUrl = "http://192.168.48.95:8002";
 
     public ServerRequest(Context context) {
         userId = MacUtils.getMobileMAC(context);
@@ -26,17 +27,25 @@ public class ServerRequest {
     }
 
     public void userUploadPosition(int userId, double latitude, double longitude, int type, Callback callback) {
-        try {
-            JSONObject object = new JSONObject();
-            object.put("latitude", latitude);
-            object.put("longitude", longitude);
-            object.put("type", type);
-            object.put("user_id", userId);
-            RequestBody body = RequestBody.create(MediaType.parse(""), object.toString());
+        JSONObject object = new JSONObject();
+        object.put("latitude", latitude);
+        object.put("longitude", longitude);
+        object.put("type", type);
+        object.put("user_id", userId);
+        RequestBody body = RequestBody.create(MediaType.parse(""), object.toString());
 
-            Request request = new Request.Builder().url(baseUrl + "/api/user/position").build();
-            client.newCall(request).equals(callback);
-        } catch (JSONException e) {}
+        Request request = new Request.Builder().url(baseUrl + "/api/user/position").build();
+        client.newCall(request).equals(callback);
+    }
+
+
+    public static JSONObject parseJSON(Response response) {
+        try {
+            return JSON.parseObject(response.body().string());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
 //    public void run(String url, Callback callback) throws IOException {
