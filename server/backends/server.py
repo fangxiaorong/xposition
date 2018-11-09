@@ -5,13 +5,15 @@
 
 
 import os
-from datetime import datetime
+
 import json
 import sqlite3
 from tornado import web
 
 conn = sqlite3.connect('server/db/test.db')
 exam_conn = None
+
+pos_map = {}
 
 '''
 type: (1: 上传, 2: 自动)
@@ -115,8 +117,6 @@ class CreateExam(web.RequestHandler):
             "stat": 1,
             "message": '成功'
         }))
-        
-
 
 class MainHandler(web.RequestHandler):
     def get(self):
@@ -127,22 +127,36 @@ class UploadPosition(web.RequestHandler):
         print(self.request.body)
         data = json.loads(self.request.body)
 
-        cursor = exam_conn.cursor()
-        cursor.execute('''
-            INSERT INTO user_position_%d (latitude, longitude, create_time) values ('%s', %f, %f, '%s')
-        ''' % (data.get('user_id'), data.get('latitude'), data.get('longitude'), datetime.now().isoformat()))
-        cursor.close()
-        exam_conn.commit()
+        # cursor = exam_conn.cursor()
+        # cursor.execute('''
+        #     INSERT INTO user_position_%d (latitude, longitude, type, create_time) values ('%s', %f, %f, %d, '%s')
+        # ''' % (data.get('user_id'), data.get('latitude'), data.get('longitude'), data.get('type'), datetime.now().isoformat()))
+        # cursor.close()
+        # exam_conn.commit()
+
+        global pos_map
+
+        pos_map.update({
+            data.get('user_id'):
+            {'id': data.get('user_id'), 'latitude': data.get('latitude'), 'longitude': data.get('longitude')}
+        })
+
         self.write(json.dumps({
             "stat": 1
         }))
 
 class GetExamLine(web.RequestHandler):
-    def get(self, mac):
-        print(mac)
+    def get(self, device_id):
+        print(device_id)
         cursor = conn.cursor()
         cursor.execute('''
-        ''')
+            SELECT id, username, device_id FROM exam_user where device_id='%s'
+        ''' % device_id)
+        exam_user = cursor.fetchone()
+        if exam_user:
+            cursor.execute('''
+                SELECT id, name, latitude, longitude FROM exam_line WHERE user_id=%d
+            ''' % exam_user(0))
         self.write(json.dumps({
             "stat": 1,
             "message": '成功',
@@ -167,24 +181,26 @@ class GetExamLine(web.RequestHandler):
 
 class GetExamUsers(web.RequestHandler):
     def get(self):
+        print('xxxxxxxxx')
         self.write(json.dumps({
             "stat": 1,
-            "users": [
-                {
-                    "id": 1,
-                    "name": '张三丰',
-                    "latitude": 96.12,
-                    "longtitude": 166.545,
-                    "score": -1
-                },
-                {
-                    "id": 2,
-                    "name": '李四书',
-                    "latitude": 96.12,
-                    "longtitude": 166.545,
-                    "score": -1
-                }
-            ]
+            "users": pos_map.values
+            # "users": [
+            #     {
+            #         "id": 1,
+            #         "name": '张三丰',
+            #         "latitude": 96.12,
+            #         "longtitude": 166.545,
+            #         "score": -1
+            #     },
+            #     {
+            #         "id": 2,
+            #         "name": '李四书',
+            #         "latitude": 96.12,
+            #         "longtitude": 166.545,
+            #         "score": -1
+            #     }
+            # ]
         }))
 
 class GetExamList(web.RequestHandler):
@@ -296,13 +312,136 @@ class GetExamResult(web.RequestHandler):
             ]
         }))
 
-application = web.Application([
-    (r"/", MainHandler),
-    (r"/api/upload/position", UploadPosition),
-    (r"/api/exam/line/(.+)", GetExamLine),
-    (r"/api/exam/users", GetExamUsers),
-    (r"/api/exam/create/(\d+)", CreateExam),
-    (r"/api/exam/userspos/(\d+)", GetExamUsersPos),
-    (r"/api/exam/user/pos/(\d+)", GetExamUserPos),
-    (r"/api/exam/result/(\d+)", GetExamResult),
-])
+from backends import CursorManager
+
+class RouteConfig(web.Application):
+    def route(self, url):
+        def register(handler):
+            self.add_handlers('.*$', [(url, handler)])
+            return handler
+        return register
+        
+app = RouteConfig(cookie_secret='Zxyo8feo0Ujlx')
+
+@app.route(r'/')
+class HomeIndex(web.RequestHandler):
+    def get(self):
+        self.write('Hello')
+        
+@app.route(r'/api/user/login/([^/]*)')
+class UserLogin(web.RequestHandler):
+    def get(self, device_id):
+        with CursorManager() as cursor:
+            users = query_user(cursor, device_id=device_id)
+            if users:
+                self.write(json.dumps({
+                    'state': 1,
+                    'message': '成功',
+                    'user': users[0]
+                }))
+            else:
+                self.write(json.dumps({
+                    'state': 10,
+                    'message': '用户未找到'
+                }))
+
+@app.route(r'/api/user/position')
+class UserUploadPosition(web.RequestHandler):
+    def post(self):
+        params = json.loads(self.request.body)
+        with CursorManager() as cursor:
+            upload_position(cursor, params.get('user_id'), params.get('latitude'), params.get('longitude'), params.get('type'))
+
+        self.write(json.dumps({
+            'state': 1,
+            'message': '成功',
+        }))
+
+@app.route(r'/api/user/line/(\d+)')
+class UserGetLine(web.RequestHandler):
+    def get(self, line_id):
+        with CursorManager() as cursor:
+            data = query_line(line_id)
+            if data:
+                self.write(json.dumps({
+                    'state': 1,
+                    'message': '成功',
+                    'line': dat[0].get('')
+                }))
+
+@app.route(r'/api/manager/login')
+class ManagerLogin(web.RequestHandler):
+    def get(self):
+        # , user_name, password
+
+        self.write(json.dumps({
+            'state': 1,
+            'message': '成功'
+        }))
+
+@app.route(r'/api/manager/exam')
+class ManagerGetExam(web.RequestHandler):
+    def get(self):
+        with CursorManager() as cursor:
+            users = query_user(cursor)
+            if users:
+                self.write(json.dumps({
+                    'state': 1,
+                    'message': '成功',
+                    'users': users
+                }))
+            else:
+                self.write(json.dumps({
+                    'state': 10,
+                    'message': '没有数据',
+                }))
+
+@app.route(r'/api/manager/locations')
+class ManagerGetLocations(web.RequestHandler):
+    def get(self):
+        with CursorManager() as cursor:
+            locations = query_position(cursor)
+            if locations:
+                self.write(json.dumps({
+                    'state': 1,
+                    'message': '成功',
+                    'locations': locations
+                }))
+            else:
+                self.write(json.dumps({
+                    'state': 10,
+                    'message': '没有数据',
+                }))
+
+@app.route(r'/api/manager/user/result/(\d+)')
+class ManagerGetUserResult(web.RequestHandler):
+    def get(self, user_id):
+        pass
+
+class AdminLogin(object):
+    def get(self, user_name, password):
+        pass
+
+class AdminNewExam(web.RequestHandler):
+    def get(self, exam_name):
+        pass
+
+class AdminSaveLine(web.RequestHandler):
+    def post(self):
+        pass
+
+class AdminImportUsers(web.RequestHandler):
+    def post(self):
+        pass
+
+
+# application = web.Application([
+#     (r"/", MainHandler),
+#     (r"/api/upload/position", UploadPosition),
+#     (r"/api/exam/line/(.+)", GetExamLine),
+#     (r"/api/exam/users", GetExamUsers),
+#     (r"/api/exam/create/(\d+)", CreateExam),
+#     (r"/api/exam/userspos/(\d+)", GetExamUsersPos),
+#     (r"/api/exam/user/pos/(\d+)", GetExamUserPos),
+#     (r"/api/exam/result/(\d+)", GetExamResult),
+# ])

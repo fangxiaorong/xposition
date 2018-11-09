@@ -1,4 +1,4 @@
-package job.fscience.com.xposition;
+package job.fscience.com.xposition1;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -16,6 +16,8 @@ import okhttp3.Response;
 import java.io.IOException;
 
 public class LoginActivity extends AppCompatActivity {
+    public static JSONObject userInfo = null;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -25,39 +27,38 @@ public class LoginActivity extends AppCompatActivity {
         findViewById(R.id.login).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                getExamUsers();
+                checkLogin();
             }
         });
     }
 
-    private void showTestOnUIThread(final String message) {
-        this.runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                Toast.makeText(LoginActivity.this, message, Toast.LENGTH_LONG).show();
-            }
-        });
-    }
-
-    ////
-    private void getExamUsers() {
-        XApplication.getServerInstance().getExamUser(new Callback() {
+    private void checkLogin() {
+        XApplication.getServerInstance().userLogin(MacUtils.getMobileMAC(this), new Callback() {
             @Override
             public void onFailure(Call call, IOException e) {
-                showTestOnUIThread("网络问题");
+                showTextOnUIThread("网络问题");
             }
 
             @Override
             public void onResponse(Call call, Response response) throws IOException {
                 JSONObject object = (JSONObject)JSON.parse(response.body().string());
-                if (object.getInteger("stat") == 1) {
-                    Intent intent = new Intent(LoginActivity.this, MainActivity.class);
-                    intent.putExtra("data", object.toJSONString());
+                if (object.getInteger("state") == 1) {
+                    LoginActivity.userInfo = object.getJSONObject("user");
+                    Intent intent = new Intent(LoginActivity.this, PositionActivity.class);
                     LoginActivity.this.startActivity(intent);
                     LoginActivity.this.finish();
                 } else {
-                    showTestOnUIThread("登录问题");
+                    showTextOnUIThread(object.getString("message"));
                 }
+            }
+        });
+    }
+
+    private void showTextOnUIThread(final String message) {
+        this.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                Toast.makeText(LoginActivity.this, message, Toast.LENGTH_LONG).show();
             }
         });
     }

@@ -6,7 +6,7 @@ import click
 from tcpserver.server import GPSServer
 from tornado.ioloop  import IOLoop
 
-from backends.server import application
+from backends.server import app
 
 @click.group()
 def cli1():
@@ -30,13 +30,16 @@ def cli2():
 def protal(port):
     """Command for start protal server"""
     print("Server start ......")
-    application.listen(port)
+    app.listen(port)
     IOLoop.instance().start()
 
 cli = click.CommandCollection(sources=[cli1, cli2])
 
 if __name__ == '__main__':
     cli()
+    # from backends import test
+    # test()
+
     # from location.models import ExamModel
 
     # x = ExamModel()
