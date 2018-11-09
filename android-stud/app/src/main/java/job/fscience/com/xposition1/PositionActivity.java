@@ -24,11 +24,10 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.amap.api.maps.AMap;
+import com.amap.api.maps.CameraUpdate;
+import com.amap.api.maps.CameraUpdateFactory;
 import com.amap.api.maps.MapView;
-import com.amap.api.maps.model.BitmapDescriptorFactory;
-import com.amap.api.maps.model.LatLng;
-import com.amap.api.maps.model.Marker;
-import com.amap.api.maps.model.MarkerOptions;
+import com.amap.api.maps.model.*;
 import job.fscience.com.server.PositionService;
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -43,14 +42,11 @@ public class PositionActivity extends AppCompatActivity {
 
     private AMap mMap;
     private LatLng mLatLng;
-    private JSONObject mData;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_position);
-
-        mData = (JSONObject) JSON.parse(getIntent().getStringExtra("data"));
 
         MapView mapView = (MapView) findViewById(R.id.map);
         mapView.onCreate(savedInstanceState);// 此方法必须重写
@@ -66,8 +62,7 @@ public class PositionActivity extends AppCompatActivity {
         Drawable headDrawable = getResources().getDrawable(R.mipmap.ic_launcher);
         headDrawable.setBounds(0, 0, 60, 60);
         headTextView.setCompoundDrawables(headDrawable, null, null, null);
-        headTextView.setText(mData.getString("username") + "(" + mData.getString("linename") + ")");
-        showPosition(mData.getJSONArray("positions"));
+        headTextView.setText(LoginActivity.userInfo.getString("username"));
 
         findViewById(R.id.upload).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -86,6 +81,8 @@ public class PositionActivity extends AppCompatActivity {
                             showTextOnUIThread("上报成功");
                         }
                     });
+                } else {
+                    showTextOnUIThread("正在定位...");
                 }
             }
         });
@@ -132,10 +129,12 @@ public class PositionActivity extends AppCompatActivity {
     }
 
     Marker positionMarker = null;
+    boolean is_first_show = true;
     @Override
     protected void onResume() {
         super.onResume();
 
+        is_first_show = true;
         if (mBroadcastReceiver == null) {
             mBroadcastReceiver = new BroadcastReceiver() {
                 @Override
@@ -153,6 +152,11 @@ public class PositionActivity extends AppCompatActivity {
                                         mLatLng,
                                         intent.getStringExtra("city"),
                                         intent.getStringExtra("address"));
+                            }
+                            if (is_first_show) {
+                                CameraUpdate cameraUpdate = CameraUpdateFactory.newCameraPosition(new CameraPosition(positionMarker.getPosition(),14,0,0));
+                                mMap.animateCamera(cameraUpdate);
+                                is_first_show = false;
                             }
                         } else {
                             Toast.makeText(PositionActivity.this, intent.getStringExtra("errinfo"), Toast.LENGTH_LONG).show();

@@ -27,7 +27,7 @@ public class AttributeActivity extends AppCompatActivity {
         final AttributeAdapter adapter = new AttributeAdapter();
         listView.setAdapter(adapter);
 
-        XApplication.getServerInstance().getExamResult(1, new Callback() {
+        XApplication.getServerInstance().managerGetResult(1, new Callback() {
             @Override
             public void onFailure(Call call, IOException e) {
 

@@ -13,16 +13,13 @@ class CursorManager(object):
         global conn
 
         self._conn = connect or conn
-        print('__init__')
 
     def __enter__(self):
         self._cursor = self._conn.cursor()
-        print('__enter__')
         return self._cursor
 
     def __exit__(self, type, value, trace):
         self._cursor.close()
-        print('__exit__')
 
 '''
 state: (1: 初始化， 2: 考试)
@@ -41,6 +38,7 @@ CREATE TABLE exam_user (
     username VARCHAR(20),
     latitude DOUBLE,
     longitude DOUBLE,
+    score DOUBLE,
     create_time TIMESTAMP
 );
 CREATE INDEX exam_user_exam ON exam_user (exam_id);
@@ -97,7 +95,7 @@ def add_users(cursor, exam_id, users):
         raise e
 
 def query_user(cursor, **kwargs):
-    return _query_object(cursor, 'exam_user', ('id', 'exam_id', 'line_id', 'device_id', 'username'), **kwargs)
+    return _query_object(cursor, 'exam_user', ('id', 'exam_id', 'line_id', 'device_id', 'username', 'score'), **kwargs)
 
 def upload_position(cursor, user_id, latitude, longitude, type):
     try:

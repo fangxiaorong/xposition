@@ -34,8 +34,8 @@ public class ServerRequest {
         object.put("user_id", userId);
         RequestBody body = RequestBody.create(MediaType.parse(""), object.toString());
 
-        Request request = new Request.Builder().url(baseUrl + "/api/user/position").build();
-        client.newCall(request).equals(callback);
+        Request request = new Request.Builder().url(baseUrl + "/api/user/position").post(body).build();
+        client.newCall(request).enqueue(callback);
     }
 
 

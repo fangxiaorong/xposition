@@ -29,6 +29,7 @@ import com.amap.api.maps.model.animation.RotateAnimation;
 import com.amap.api.maps.utils.SpatialRelationUtil;
 import com.amap.api.maps.utils.overlay.SmoothMoveMarker;
 import job.fscience.com.lib.SlidingUpPanelLayout;
+import job.fscience.com.net.ServerRequest;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.Response;
@@ -89,16 +90,23 @@ public class MainActivity extends AppCompatActivity {
         });
         mLayout.setAnchorPoint(0.5f);//用来测试锚点功能
 
-        XApplication.getServerInstance().getExamLine(new Callback() {
+        XApplication.getServerInstance().managerGetExam(new Callback() {
             @Override
             public void onFailure(Call call, IOException e) {
+                showTextOnUIThread("网络问题");
             }
 
             @Override
             public void onResponse(Call call, Response response) throws IOException {
-                JSONObject data = (JSONObject) JSON.parse(response.body().string());
-                data.getJSONArray("positions");
-                System.out.println(data);
+                JSONObject data = ServerRequest.parseJSON(response);
+                if (data == null) {
+                    showTextOnUIThread("服务器问题");
+                } else if (data.getInteger("state") == 1) {
+                    data.getJSONArray("positions");
+                    System.out.println(data);
+                } else {
+                    showTextOnUIThread(data.getString("message"));
+                }
             }
         });
 
@@ -122,8 +130,24 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        JSONObject data = (JSONObject) JSON.parse(getIntent().getStringExtra("data"));
-        adapter.updateData(data.getJSONArray("users"));
+        XApplication.getServerInstance().managerGetExam(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                showTextOnUIThread("网络问题");
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                JSONObject object = ServerRequest.parseJSON(response);
+                if (object == null) {
+                    showTextOnUIThread("服务器问题");
+                } else if (object.getInteger("state") == 1) {
+                    adapter.updateData(object.getJSONArray("users"));
+                } else {
+                    showTextOnUIThread(object.getString("message"));
+                }
+            }
+        });
 
         findViewById(R.id.delete).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -138,30 +162,36 @@ public class MainActivity extends AppCompatActivity {
                     polyline.remove();
                 }
 
-                XApplication.getServerInstance().getExamUserPos(((int) view.getTag()), new Callback() {
+                XApplication.getServerInstance().managerGetUserTrack(((int) view.getTag()), new Callback() {
                     @Override
                     public void onFailure(Call call, IOException e) {
-                        //
+                        showTextOnUIThread("网络问题");
                     }
 
                     @Override
-                    public void onResponse(Call call, final Response response) throws IOException {
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                try {
-                                    JSONObject data = JSON.parseObject(response.body().string());
-                                    JSONArray points = data.getJSONArray("points");
-                                    List<LatLng> latLngs = new ArrayList<>();
-                                    for (int idx = 0; idx < points.size(); idx ++) {
-                                        JSONObject point = points.getJSONObject(idx);
-                                        latLngs.add(new LatLng(point.getDouble("latitude"), point.getDouble("longitude")));
-                                    }
-                                    polyline = mapView.getMap().addPolyline(new PolylineOptions().
-                                            addAll(latLngs).width(10).color(Color.argb(255, 1, 1, 1)));
-                                } catch (Exception e) {}
-                            }
-                        });
+                    public void onResponse(Call call, Response response) throws IOException {
+                        final JSONObject object = ServerRequest.parseJSON(response);
+                        if (object == null) {
+                            showTextOnUIThread("服务器问题");
+                        } else if (object.getInteger("state") == 1) {
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    try {
+                                        JSONArray points = object.getJSONArray("points");
+                                        List<LatLng> latLngs = new ArrayList<>();
+                                        for (int idx = 0; idx < points.size(); idx ++) {
+                                            JSONObject point = points.getJSONObject(idx);
+                                            latLngs.add(new LatLng(point.getDouble("latitude"), point.getDouble("longitude")));
+                                        }
+                                        polyline = mapView.getMap().addPolyline(new PolylineOptions().
+                                                addAll(latLngs).width(10).color(Color.argb(255, 1, 1, 1)));
+                                    } catch (Exception e) {}
+                                }
+                            });
+                        } else {
+                            showTextOnUIThread(object.getString("message"));
+                        }
                     }
                 });
             }
@@ -188,30 +218,31 @@ public class MainActivity extends AppCompatActivity {
         mHandler.postDelayed(new Runnable() {
             @Override
             public void run() {
-                XApplication.getServerInstance().getExamUsersPos(1, new Callback() {
+                XApplication.getServerInstance().managerGetLocations( new Callback() {
                     @Override
                     public void onFailure(Call call, IOException e) {
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                Toast.makeText(MainActivity.this, "网络问题", Toast.LENGTH_SHORT).show();
-                                udpatePosition();
-                            }
-                        });
+                        showTextOnUIThread("网络问题");
                     }
 
                     @Override
-                    public void onResponse(Call call, final Response response) throws IOException {
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                try {
-                                    JSONObject object = (JSONObject) JSON.parse(response.body().string());
-                                    showPosition(object.getJSONArray("users"));
-                                } catch (Exception e) {}
-                                udpatePosition();
-                            }
-                        });
+                    public void onResponse(Call call, Response response) throws IOException {
+                        final JSONObject object = ServerRequest.parseJSON(response);
+                        if (object == null) {
+                            showTextOnUIThread("服务器问题");
+                        } else if (object.getInteger("state") == 1) {
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    try {
+                                        showPosition(object.getJSONArray("locations"));
+                                    } catch (Exception e) {}
+                                    udpatePosition();
+                                }
+                            });
+                        } else {
+                            showTextOnUIThread(object.getString("message"));
+                        }
+
                     }
                 });
             }
@@ -412,5 +443,14 @@ public class MainActivity extends AppCompatActivity {
             smoothMarker.removeMarker();
             smoothMarker = null;
         }
+    }
+
+    private void showTextOnUIThread(final String message) {
+        this.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                Toast.makeText(MainActivity.this, message, Toast.LENGTH_LONG).show();
+            }
+        });
     }
 }

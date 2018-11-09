@@ -56,6 +56,7 @@ CREATE TABLE exam_user (
     username VARCHAR(20),
     latitude DOUBLE,
     longitude DOUBLE,
+    score DOUBLE,
     create_time TIMESTAMP
 );
 CREATE INDEX exam_user_exam ON exam_user (exam_id);
@@ -63,7 +64,7 @@ CREATE INDEX exam_user_line ON exam_user (line_id);
 CREATE INDEX exam_user_device ON exam_user (device_id);
 
 
-INSERT INTO exam_user (exam_id, line_id, device_id, username, create_time) values (1, 1, '9C:2E:A1:EC:93:6F', '小A', '2018-11-08T21:46:20.257750')
+INSERT INTO exam_user (exam_id, line_id, device_id, username, score, create_time) values (1, 1, '9C:2E:A1:EC:93:6F', '小A', 50.1, '2018-11-08T21:46:20.257750')
 '''
 class NewExam(web.RequestHandler):
     def get(self, exam_id):
@@ -413,10 +414,71 @@ class ManagerGetLocations(web.RequestHandler):
                     'message': '没有数据',
                 }))
 
+@app.route(r'/api/manager/track/(\d+)')
+class ManagerGetUserTrack(object):
+    def get(self, user_id):
+        # with CursorManager() as cursor:
+        #     pass
+        self.write(json.dumps({
+            "state": 1,
+            "message": '成功',
+            "points": [
+                { "latitude": 39.78620582307232, "longitude": 116.31460294485826, },
+                { "latitude": 39.77620582307232, "longitude": 116.32460294485826, },
+                { "latitude": 39.76620582307232, "longitude": 116.32460294485826, },
+                { "latitude": 39.76620582307232, "longitude": 116.32460294485826, },
+                { "latitude": 39.75620582307232, "longitude": 116.33460294485826, },
+                { "latitude": 39.75620582307232, "longitude": 116.33460294485826, },
+                { "latitude": 39.74620582307232, "longitude": 116.33460294485826, },
+                { "latitude": 39.74620582307232, "longitude": 116.33460294485826, },
+                { "latitude": 39.74620582307232, "longitude": 116.33460294485826, },
+                { "latitude": 39.73620582307232, "longitude": 116.34460294485826, },
+                { "latitude": 39.74620582307232, "longitude": 116.34460294485826, },
+                { "latitude": 39.73620582307232, "longitude": 116.34460294485826, },
+                { "latitude": 39.73620582307232, "longitude": 116.35460294485826, },
+                { "latitude": 39.73620582307232, "longitude": 116.35460294485826, },
+                { "latitude": 39.74620582307232, "longitude": 116.35460294485826, },
+                { "latitude": 39.73620582307232, "longitude": 116.35460294485826, },
+                { "latitude": 39.72620582307232, "longitude": 116.34460294485826, },
+                { "latitude": 39.72620582307232, "longitude": 116.34460294485826, },
+                { "latitude": 39.72620582307232, "longitude": 116.34460294485826, },
+                { "latitude": 39.71620582307232, "longitude": 116.34460294485826, },
+                { "latitude": 39.71620582307232, "longitude": 116.34460294485826, },
+            ]
+        }))
+
+
 @app.route(r'/api/manager/user/result/(\d+)')
 class ManagerGetUserResult(web.RequestHandler):
     def get(self, user_id):
-        pass
+        self.write(json.dumps({
+            "stat": 1,
+            "linename": "xxx",
+            "total_score": 88.8,
+            "points": [
+                {
+                    "id": 1,
+                    "latitude": 39.78620582307232,
+                    "longitude": 116.31460294485826,
+                    "weight": 0.3,
+                    "score": 1
+                },
+                {
+                    "id": 2,
+                    "latitude": 39.88620582307232,
+                    "longitude": 116.31460294485826,
+                    "weight": 0.5,
+                    "score": 1
+                },
+                {
+                    "id": 3,
+                    "latitude": 39.88620582307232,
+                    "longitude": 116.31460294485826,
+                    "weight": 0.2,
+                    "score": 1
+                }
+            ]
+        }))
 
 class AdminLogin(object):
     def get(self, user_name, password):

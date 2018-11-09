@@ -6,9 +6,9 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
-import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import job.fscience.com.lib.MacUtils;
+import job.fscience.com.net.ServerRequest;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.Response;
@@ -30,7 +30,7 @@ public class LoginActivity extends AppCompatActivity {
         });
     }
 
-    private void showTestOnUIThread(final String message) {
+    private void showTextOnUIThread(final String message) {
         this.runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -41,22 +41,23 @@ public class LoginActivity extends AppCompatActivity {
 
     ////
     private void getExamUsers() {
-        XApplication.getServerInstance().getExamUser(new Callback() {
+        XApplication.getServerInstance().managerLogin(new Callback() {
             @Override
             public void onFailure(Call call, IOException e) {
-                showTestOnUIThread("网络问题");
+                showTextOnUIThread("网络问题");
             }
 
             @Override
             public void onResponse(Call call, Response response) throws IOException {
-                JSONObject object = (JSONObject)JSON.parse(response.body().string());
-                if (object.getInteger("stat") == 1) {
+                JSONObject object = ServerRequest.parseJSON(response);
+                if (object == null) {
+                    showTextOnUIThread("服务器问题");
+                } else if (object.getInteger("state") == 1) {
                     Intent intent = new Intent(LoginActivity.this, MainActivity.class);
-                    intent.putExtra("data", object.toJSONString());
                     LoginActivity.this.startActivity(intent);
                     LoginActivity.this.finish();
                 } else {
-                    showTestOnUIThread("登录问题");
+                    showTextOnUIThread("登录问题");
                 }
             }
         });
