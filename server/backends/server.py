@@ -75,6 +75,8 @@ class NewExam(web.RequestHandler):
 
 class CreateExam(web.RequestHandler):
     def get(self, exam_id):
+        global exam_conn
+
         exam_id = int(exam_id)
         cursor = conn.cursor()
         cursor.execute('''

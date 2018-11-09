@@ -347,6 +347,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void selectUser(int userId) {
+        unSelectUser();
+
         findViewById(R.id.route).setVisibility(View.VISIBLE);
         findViewById(R.id.attribute).setVisibility(View.VISIBLE);
         findViewById(R.id.delete).setVisibility(View.VISIBLE);

@@ -35,7 +35,8 @@
             android:supportsRtl="true"
             android:theme="@style/AppTheme">
 
-        <meta-data android:name="com.amap.api.v2.apikey" android:value="6688d8f697b2f36ac7b00df20658d719"></meta-data>
+        <!--<meta-data android:name="com.amap.api.v2.apikey" android:value="6688d8f697b2f36ac7b00df20658d719"></meta-data>-->
+        <meta-data android:name="com.amap.api.v2.apikey" android:value="ef10322f40dee0314cd6f4ef98f38a73"/>
 
         <activity android:name=".LoginActivity">
             <intent-filter>

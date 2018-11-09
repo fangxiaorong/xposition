@@ -34,7 +34,7 @@ public class PositionService extends Service implements AMapLocationListener {
         option.setLocationMode(AMapLocationClientOption.AMapLocationMode.Hight_Accuracy);
         option.setOnceLocation(true);
         option.setOnceLocationLatest(true);
-        locationClient.setLocationOption(option);
+//        locationClient.setLocationOption(option);
     }
 
     @Override

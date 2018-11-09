@@ -25,7 +25,7 @@
                     android:id="@+id/map" />
             <TextView
                     android:id="@+id/head"
-                    android:text="王种子"
+                    android:text="测试考官"
                     android:textSize="24sp"
                     android:textAlignment="center"
                     android:padding="10dp"
@@ -52,18 +52,21 @@
                 <ImageView
                         android:id="@+id/route"
                         android:src="@mipmap/route"
+                        android:visibility="gone"
                         android:layout_width="wrap_content"
                         android:layout_height="match_parent"
                         android:padding="10dp"/>
                 <ImageView
                         android:id="@+id/play"
                         android:src="@mipmap/play"
+                        android:visibility="gone"
                         android:layout_width="wrap_content"
                         android:layout_height="match_parent"
                         android:padding="10dp"/>
                 <ImageView
                         android:id="@+id/attribute"
                         android:src="@mipmap/attribute"
+                        android:visibility="gone"
                         android:layout_width="wrap_content"
                         android:layout_height="match_parent"
                         android:padding="10dp"/>
@@ -78,6 +81,7 @@
                 <ImageView
                         android:id="@+id/delete"
                         android:src="@mipmap/cancel"
+                        android:visibility="gone"
                         android:layout_width="wrap_content"
                         android:layout_height="match_parent"
                         android:padding="10dp"/>

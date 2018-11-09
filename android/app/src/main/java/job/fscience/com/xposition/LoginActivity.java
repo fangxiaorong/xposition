@@ -25,8 +25,8 @@ public class LoginActivity extends AppCompatActivity {
         findViewById(R.id.login).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-//                checkLogin();
-                getExamUsers();
+                checkLogin();
+//                getExamUsers();
             }
         });
     }
