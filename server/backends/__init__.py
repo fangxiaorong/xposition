@@ -96,7 +96,7 @@ def add_users(cursor, exam_id, users):
         raise e
 
 def query_user(cursor, **kwargs):
-    return _query_object(cursor, 'exam_user', ('id', 'exam_id', 'line_id', 'device_id', 'username', 'score'), **kwargs)
+    return _query_object(cursor, 'exam_user', ('id', 'exam_id', 'line_id', 'device_id', 'username', 'score', 'latitude', 'longitude', 'pos_update_time'), **kwargs)
 
 def upload_position(cursor, user_id, latitude, longitude, type):
     try:
@@ -109,7 +109,7 @@ def upload_position(cursor, user_id, latitude, longitude, type):
         raise e
 
 def query_position(cursor, **kwargs):
-    return _query_object(cursor, 'exam_user', ('id', 'device_id', 'username', 'latitude', 'longitude', 'pos_update_time'), **kwargs)
+    return _query_object(cursor, 'exam_user', ('id', 'device_id', 'username', 'latitude', 'longitude', 'pos_update_time', 'score'), **kwargs)
 
 def query_line(cursor, line_id):
     return _query_object(cursor, 'exam_line', ('id', 'line_info'), id=line_id)

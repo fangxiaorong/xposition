@@ -22,4 +22,12 @@
             android:layout_weight="1"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"/>
+    <ToggleButton
+            android:id="@+id/state"
+            android:checked="true"
+            android:textOn="显示"
+            android:textOff="隐藏"
+            android:focusable="false"
+            android:layout_width="60sp"
+            android:layout_height="wrap_content"/>
 </LinearLayout>

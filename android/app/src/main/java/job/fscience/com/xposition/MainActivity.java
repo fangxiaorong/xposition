@@ -12,7 +12,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
-import android.view.animation.LinearInterpolator;
 import android.widget.*;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
@@ -21,8 +20,6 @@ import com.amap.api.maps.CameraUpdate;
 import com.amap.api.maps.CameraUpdateFactory;
 import com.amap.api.maps.MapView;
 import com.amap.api.maps.model.*;
-import com.amap.api.maps.model.animation.Animation;
-import com.amap.api.maps.model.animation.RotateAnimation;
 import com.amap.api.maps.utils.SpatialRelationUtil;
 import com.amap.api.maps.utils.overlay.SmoothMoveMarker;
 import job.fscience.com.lib.MapMarkManager;
@@ -34,11 +31,9 @@ import okhttp3.Response;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements CompoundButton.OnCheckedChangeListener {
     private static final String TAG = "DemoActivity";
     public static final String SAVED_STATE_ACTION_BAR_HIDDEN = "saved_state_action_bar_hidden";
     private SlidingUpPanelLayout mLayout;
@@ -146,6 +141,7 @@ public class MainActivity extends AppCompatActivity {
                         @Override
                         public void run() {
                             adapter.updateData(object.getJSONArray("users"));
+                            showPosition(object.getJSONArray("users"));
                         }
                     });
 
@@ -216,11 +212,11 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        udpatePosition();
+        updatePosition();
     }
 
     Handler mHandler = new Handler();
-    private void udpatePosition() {
+    private void updatePosition() {
         mHandler.postDelayed(new Runnable() {
             @Override
             public void run() {
@@ -228,6 +224,7 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onFailure(Call call, IOException e) {
                         showTextOnUIThread("网络问题");
+                        updatePosition();
                     }
 
                     @Override
@@ -242,13 +239,12 @@ public class MainActivity extends AppCompatActivity {
                                     try {
                                         showPosition(object.getJSONArray("locations"));
                                     } catch (Exception e) {}
-                                    udpatePosition();
                                 }
                             });
                         } else {
                             showTextOnUIThread(object.getString("message"));
                         }
-
+                        updatePosition();
                     }
                 });
             }
@@ -269,22 +265,6 @@ public class MainActivity extends AppCompatActivity {
             super.onBackPressed();
         }
     }
-
-//    Map<String, Bitmap> iconMap = new HashMap<>();
-//    private void initIcons() {
-//        Bitmap bitmap = BitmapFactory.decodeResource(getResources(),R.mipmap.sprite);
-//
-//        double xScale = bitmap.getWidth() / 460.0;
-//        double yScale = bitmap.getHeight() / 1964.0;
-//        int size = (int)(55 * xScale);
-//        iconMap.put("position", Bitmap.createBitmap(bitmap, 0, (int)(yScale * 1375.0), size, size));
-//        iconMap.put("person", Bitmap.createBitmap(bitmap, (int)(335 * xScale), (int)(yScale * 1490), size, size));
-//        iconMap.put("dest", Bitmap.createBitmap(bitmap, 0, (int)(yScale * 650), size, size));
-//        iconMap.put("dest1", Bitmap.createBitmap(bitmap, (int)(220 * xScale), (int)(yScale * 440), size, size));
-//        iconMap.put("delete", Bitmap.createBitmap(bitmap, (int)(220 * xScale), (int)(yScale * 590), size, size));
-//
-//        bitmap.recycle();
-//    }
 
     class UserListAdapter extends BaseAdapter {
         JSONArray data = null;
@@ -321,9 +301,11 @@ public class MainActivity extends AppCompatActivity {
             if (convertView==null) {
                 view = inflater.inflate(R.layout.item_user_info, null);
                 UserInfoViewHolder holder = new UserInfoViewHolder();
-                holder.userIdTextView = (TextView) view.findViewById(R.id.user_id);
-                holder.userNameTextView = (TextView) view.findViewById(R.id.user_name);
-                holder.userScoreTextView = (TextView) view.findViewById(R.id.user_score);
+                holder.userIdTextView =  view.findViewById(R.id.user_id);
+                holder.userNameTextView = view.findViewById(R.id.user_name);
+                holder.userScoreTextView = view.findViewById(R.id.user_score);
+                holder.userStateButtom = view.findViewById(R.id.state);
+                holder.userStateButtom.setOnCheckedChangeListener(MainActivity.this);
                 view.setTag(holder);
                 viewHolder = holder;
             }else{
@@ -335,6 +317,10 @@ public class MainActivity extends AppCompatActivity {
             viewHolder.userNameTextView.setText(object.getString("username"));
             viewHolder.userScoreTextView.setText(object.getString("score"));
 
+            Boolean visible = markManager.userVisibleMap.get(object.getInteger("id"));
+            viewHolder.userStateButtom.setChecked(visible == null || visible);
+            viewHolder.userStateButtom.setTag(object.getInteger("id"));
+
             return view;
         }
     }
@@ -343,9 +329,9 @@ public class MainActivity extends AppCompatActivity {
         public TextView userIdTextView;
         public TextView userNameTextView;
         public TextView userScoreTextView;
+        public ToggleButton userStateButtom;
     }
 
-    Map<Integer, Marker> userMap = new HashMap<>();
     private void showPosition(JSONArray points) {
         for (int idx = 0; idx < points.size(); idx ++) {
             JSONObject point = points.getJSONObject(idx);
@@ -356,45 +342,21 @@ public class MainActivity extends AppCompatActivity {
                     point.getDouble("latitude"),
                     point.getDouble("longitude"),
                     point.getInteger("state"));
-//            Marker marker = userMap.get(point.getInteger("id"));
-//            if (marker == null) {
-//                Double latitude = point.getDouble("latitude");
-//                Double longitude = point.getDouble("longitude");
-//                if (latitude != null && longitude != null) {
-//                    MarkerOptions markerOption = new MarkerOptions();
-//                    markerOption.position(new LatLng(latitude, longitude));
-//                    markerOption.title(null).snippet(null);
-//
-//                    markerOption.draggable(true);//设置Marker可拖动
-//                    markerOption.icon(BitmapDescriptorFactory.fromBitmap(iconMap.get("person")));
-//                    // 将Marker设置为贴地显示，可以双指下拉地图查看效果
-//                    markerOption.setFlat(true);//设置marker平贴地图效果
-//                    userMap.put(point.getInteger("id"), mMap.addMarker(markerOption));
-//                }
-//            } else {
-//                marker.setPosition(new LatLng(point.getDouble("latitude"), point.getDouble("longitude")));
-//            }
         }
     }
 
     private void startAnimation(int id) {
-        Animation animation = new RotateAnimation(0, 360, 0, 0, 0);
-        long duration = 1000L;
-        animation.setDuration(duration);
-        animation.setInterpolator(new LinearInterpolator());
-
-        Marker animationMark = userMap.get(id);
-        animationMark.setAnimation(animation);
-        animationMark.startAnimation();
-
-        CameraUpdate cameraUpdate = CameraUpdateFactory.newCameraPosition(new CameraPosition(animationMark.getPosition(), 14, 0, 0));
-        mMap.moveCamera(cameraUpdate);
+        Marker marker = markManager.animationMark(id);
+        if (marker != null) {
+            CameraUpdate cameraUpdate = CameraUpdateFactory.newCameraPosition(new CameraPosition(marker.getPosition(), 14, 0, 0));
+            mMap.moveCamera(cameraUpdate);
+        }
     }
 
     private void selectUser(int userId) {
         unSelectUser();
 
-        if (userMap.get(userId) != null) {
+        if (markManager.userValidate(userId)) {
             findViewById(R.id.route).setVisibility(View.VISIBLE);
             findViewById(R.id.attribute).setVisibility(View.VISIBLE);
             findViewById(R.id.delete).setVisibility(View.VISIBLE);
@@ -470,5 +432,11 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(MainActivity.this, message, Toast.LENGTH_LONG).show();
             }
         });
+    }
+
+    @Override
+    public void onCheckedChanged(CompoundButton compoundButton, boolean checked) {
+        Integer userId = (Integer)compoundButton.getTag();
+        markManager.setVisible(userId, checked);
     }
 }
