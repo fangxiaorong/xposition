@@ -102,7 +102,7 @@ def upload_position(cursor, user_id, latitude, longitude, type):
     try:
         sql_str = '''    
             UPDATE exam_user set latitude=%f, longitude=%f, pos_update_time='%s' WHERE id=%d
-        ''' % (latitude, longitude, user_id, datetime.now().isoformat())
+        ''' % (latitude, longitude, datetime.now().isoformat(), user_id)
         cursor.execute(sql_str)
         cursor.connection.commit()
     except Exception as e:
