@@ -411,7 +411,7 @@ class ManagerGetLocations(web.RequestHandler):
                     else:
                         update_time = datetime(2000, 1, 1)
                     if location.get('latitude') and location.get('longitude'):
-                        if (datetime.now() - update_time).total_score < 300:
+                        if (datetime.now() - update_time).total_seconds() < 300:
                             location.update({'state': 1})
                         else:
                             location.update({'state': 2})
