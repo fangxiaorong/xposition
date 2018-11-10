@@ -39,7 +39,8 @@ CREATE TABLE exam_user (
     latitude DOUBLE,
     longitude DOUBLE,
     score DOUBLE,
-    create_time TIMESTAMP
+    create_time TIMESTAMP,
+    pos_update_time TIMESTAMP
 );
 CREATE INDEX exam_user_exam ON exam_user (exam_id);
 CREATE INDEX exam_user_line ON exam_user (line_id);
@@ -108,7 +109,7 @@ def upload_position(cursor, user_id, latitude, longitude, type):
         raise e
 
 def query_position(cursor, **kwargs):
-    return _query_object(cursor, 'exam_user', ('id', 'device_id', 'username', 'latitude', 'longitude'), **kwargs)
+    return _query_object(cursor, 'exam_user', ('id', 'device_id', 'username', 'latitude', 'longitude', 'pos_update_time'), **kwargs)
 
 def query_line(cursor, line_id):
     return _query_object(cursor, 'exam_line', ('id', 'line_info'), id=line_id)

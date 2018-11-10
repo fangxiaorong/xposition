@@ -403,6 +403,20 @@ class ManagerGetLocations(web.RequestHandler):
         with CursorManager() as cursor:
             locations = query_position(cursor)
             if locations:
+                for location in locations:
+                    update_time = location.get('pos_update_time')
+                    if update_time:
+                        update_time = datetime.datetime.strptime(update_time, '%Y-%m-%dT%H:%M:%S.%f')
+                    else:
+                        update_time = datetime.datetime(2000, 1, 1)
+                    if location.get('latitude') and location.get('longitude'):
+                        if (datetime.datetime.now() - update_time).total_score < 300:
+                            location.update({'state': 1})
+                        else:
+                            location.update({'state': 2})
+                    else:
+                        location.update({'state': 3})
+
                 self.write(json.dumps({
                     'state': 1,
                     'message': '成功',

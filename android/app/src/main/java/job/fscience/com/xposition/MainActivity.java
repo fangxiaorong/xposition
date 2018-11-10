@@ -1,8 +1,6 @@
 package job.fscience.com.xposition;
 
 import android.content.Intent;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.os.Handler;
@@ -16,7 +14,6 @@ import android.view.ViewGroup;
 import android.view.Window;
 import android.view.animation.LinearInterpolator;
 import android.widget.*;
-import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.amap.api.maps.AMap;
@@ -28,6 +25,7 @@ import com.amap.api.maps.model.animation.Animation;
 import com.amap.api.maps.model.animation.RotateAnimation;
 import com.amap.api.maps.utils.SpatialRelationUtil;
 import com.amap.api.maps.utils.overlay.SmoothMoveMarker;
+import job.fscience.com.lib.MapMarkManager;
 import job.fscience.com.lib.SlidingUpPanelLayout;
 import job.fscience.com.net.ServerRequest;
 import okhttp3.Call;
@@ -48,6 +46,7 @@ public class MainActivity extends AppCompatActivity {
     private UserListAdapter adapter;
 
     private Polyline polyline = null;
+    private MapMarkManager markManager = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,6 +60,7 @@ public class MainActivity extends AppCompatActivity {
         mMap.setTrafficEnabled(false);// 显示实时交通状况
         //地图模式可选类型：MAP_TYPE_NORMAL,MAP_TYPE_SATELLITE,MAP_TYPE_NIGHT
         mMap.setMapType(AMap.MAP_TYPE_NORMAL);
+        markManager = new MapMarkManager(this, mMap);
 
         mLayout = (SlidingUpPanelLayout) findViewById(R.id.sliding_layout);
         mLayout.setPanelSlideListener(new SlidingUpPanelLayout.PanelSlideListener() {
@@ -111,7 +111,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
         ///
-        initIcons();
+//        initIcons();
         // 格式设置
         TextView headTextView = (TextView)findViewById(R.id.head);
         Drawable headDrawable = getResources().getDrawable(R.mipmap.ic_launcher);
@@ -138,11 +138,17 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onResponse(Call call, Response response) throws IOException {
-                JSONObject object = ServerRequest.parseJSON(response);
+                final JSONObject object = ServerRequest.parseJSON(response);
                 if (object == null) {
                     showTextOnUIThread("服务器问题");
                 } else if (object.getInteger("state") == 1) {
-                    adapter.updateData(object.getJSONArray("users"));
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            adapter.updateData(object.getJSONArray("users"));
+                        }
+                    });
+
                 } else {
                     showTextOnUIThread(object.getString("message"));
                 }
@@ -264,21 +270,21 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    Map<String, Bitmap> iconMap = new HashMap<>();
-    private void initIcons() {
-        Bitmap bitmap = BitmapFactory.decodeResource(getResources(),R.mipmap.sprite);
-
-        double xScale = bitmap.getWidth() / 460.0;
-        double yScale = bitmap.getHeight() / 1964.0;
-        int size = (int)(55 * xScale);
-        iconMap.put("position", Bitmap.createBitmap(bitmap, 0, (int)(yScale * 1375.0), size, size));
-        iconMap.put("person", Bitmap.createBitmap(bitmap, (int)(335 * xScale), (int)(yScale * 1490), size, size));
-        iconMap.put("dest", Bitmap.createBitmap(bitmap, 0, (int)(yScale * 650), size, size));
-        iconMap.put("dest1", Bitmap.createBitmap(bitmap, (int)(220 * xScale), (int)(yScale * 440), size, size));
-        iconMap.put("delete", Bitmap.createBitmap(bitmap, (int)(220 * xScale), (int)(yScale * 590), size, size));
-
-        bitmap.recycle();
-    }
+//    Map<String, Bitmap> iconMap = new HashMap<>();
+//    private void initIcons() {
+//        Bitmap bitmap = BitmapFactory.decodeResource(getResources(),R.mipmap.sprite);
+//
+//        double xScale = bitmap.getWidth() / 460.0;
+//        double yScale = bitmap.getHeight() / 1964.0;
+//        int size = (int)(55 * xScale);
+//        iconMap.put("position", Bitmap.createBitmap(bitmap, 0, (int)(yScale * 1375.0), size, size));
+//        iconMap.put("person", Bitmap.createBitmap(bitmap, (int)(335 * xScale), (int)(yScale * 1490), size, size));
+//        iconMap.put("dest", Bitmap.createBitmap(bitmap, 0, (int)(yScale * 650), size, size));
+//        iconMap.put("dest1", Bitmap.createBitmap(bitmap, (int)(220 * xScale), (int)(yScale * 440), size, size));
+//        iconMap.put("delete", Bitmap.createBitmap(bitmap, (int)(220 * xScale), (int)(yScale * 590), size, size));
+//
+//        bitmap.recycle();
+//    }
 
     class UserListAdapter extends BaseAdapter {
         JSONArray data = null;
@@ -343,28 +349,36 @@ public class MainActivity extends AppCompatActivity {
     private void showPosition(JSONArray points) {
         for (int idx = 0; idx < points.size(); idx ++) {
             JSONObject point = points.getJSONObject(idx);
-            System.out.println(userMap.size());
-            Marker marker = userMap.get(point.getInteger("id"));
-            if (marker == null) {
-                System.out.println(point);
-                MarkerOptions markerOption = new MarkerOptions();
-                markerOption.position(new LatLng(point.getDouble("latitude"), point.getDouble("longitude")));
-                markerOption.title(null).snippet(null);
 
-                markerOption.draggable(true);//设置Marker可拖动
-                markerOption.icon(BitmapDescriptorFactory.fromBitmap(iconMap.get("person")));
-                // 将Marker设置为贴地显示，可以双指下拉地图查看效果
-                markerOption.setFlat(true);//设置marker平贴地图效果
-                userMap.put(point.getInteger("id"), mMap.addMarker(markerOption));
-            } else {
-                System.out.println("xxxxx:" + point);
-                marker.setPosition(new LatLng(point.getDouble("latitude"), point.getDouble("longitude")));
-            }
+            markManager.updateUser(
+                    point.getInteger("id"),
+                    point.getString("username"),
+                    point.getDouble("latitude"),
+                    point.getDouble("longitude"),
+                    point.getInteger("state"));
+//            Marker marker = userMap.get(point.getInteger("id"));
+//            if (marker == null) {
+//                Double latitude = point.getDouble("latitude");
+//                Double longitude = point.getDouble("longitude");
+//                if (latitude != null && longitude != null) {
+//                    MarkerOptions markerOption = new MarkerOptions();
+//                    markerOption.position(new LatLng(latitude, longitude));
+//                    markerOption.title(null).snippet(null);
+//
+//                    markerOption.draggable(true);//设置Marker可拖动
+//                    markerOption.icon(BitmapDescriptorFactory.fromBitmap(iconMap.get("person")));
+//                    // 将Marker设置为贴地显示，可以双指下拉地图查看效果
+//                    markerOption.setFlat(true);//设置marker平贴地图效果
+//                    userMap.put(point.getInteger("id"), mMap.addMarker(markerOption));
+//                }
+//            } else {
+//                marker.setPosition(new LatLng(point.getDouble("latitude"), point.getDouble("longitude")));
+//            }
         }
     }
 
     private void startAnimation(int id) {
-        Animation animation = new RotateAnimation(0,360,0,0, 0);
+        Animation animation = new RotateAnimation(0, 360, 0, 0, 0);
         long duration = 1000L;
         animation.setDuration(duration);
         animation.setInterpolator(new LinearInterpolator());
@@ -373,21 +387,25 @@ public class MainActivity extends AppCompatActivity {
         animationMark.setAnimation(animation);
         animationMark.startAnimation();
 
-        CameraUpdate cameraUpdate = CameraUpdateFactory.newCameraPosition(new CameraPosition(animationMark.getPosition(),14,0,0));
+        CameraUpdate cameraUpdate = CameraUpdateFactory.newCameraPosition(new CameraPosition(animationMark.getPosition(), 14, 0, 0));
         mMap.moveCamera(cameraUpdate);
     }
 
     private void selectUser(int userId) {
         unSelectUser();
 
-        findViewById(R.id.route).setVisibility(View.VISIBLE);
-        findViewById(R.id.attribute).setVisibility(View.VISIBLE);
-        findViewById(R.id.delete).setVisibility(View.VISIBLE);
-        findViewById(R.id.play).setVisibility(View.VISIBLE);
-        findViewById(R.id.route).setTag(userId);
-        findViewById(R.id.delete).setTag(userId);
+        if (userMap.get(userId) != null) {
+            findViewById(R.id.route).setVisibility(View.VISIBLE);
+            findViewById(R.id.attribute).setVisibility(View.VISIBLE);
+            findViewById(R.id.delete).setVisibility(View.VISIBLE);
+            findViewById(R.id.play).setVisibility(View.VISIBLE);
+            findViewById(R.id.route).setTag(userId);
+            findViewById(R.id.delete).setTag(userId);
 
-        startAnimation(userId);
+            startAnimation(userId);
+        } else {
+            Toast.makeText(this, "当前员工未定位", Toast.LENGTH_SHORT).show();
+        }
     }
     private void unSelectUser() {
         if (polyline != null) {
@@ -412,7 +430,7 @@ public class MainActivity extends AppCompatActivity {
 
             smoothMarker = new SmoothMoveMarker(mMap);
             // 设置滑动的图标
-            smoothMarker.setDescriptor(BitmapDescriptorFactory.fromBitmap(iconMap.get("dest")));
+//            smoothMarker.setDescriptor(BitmapDescriptorFactory.fromBitmap(iconMap.get("dest")));
 
             LatLng drivePoint = points.get(0);
             Pair<Integer, LatLng> pair = SpatialRelationUtil.calShortestDistancePoint(points, drivePoint);

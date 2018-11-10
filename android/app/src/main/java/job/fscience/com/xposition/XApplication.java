@@ -2,6 +2,7 @@ package job.fscience.com.xposition;
 
 import android.app.Application;
 import android.content.Context;
+import com.tencent.bugly.crashreport.CrashReport;
 import job.fscience.com.net.ServerRequest;
 
 public class XApplication extends Application {
@@ -13,6 +14,8 @@ public class XApplication extends Application {
         super.onCreate();
 
         XApplication.context = getApplicationContext();
+
+        CrashReport.initCrashReport(getApplicationContext(), "771384f936", true);
     }
 
     private static class SingletonRequestHolder {

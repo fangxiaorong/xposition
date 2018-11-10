@@ -34,4 +34,5 @@ dependencies {
     compile 'com.amap.api:location:latest.integration'
     compile 'com.squareup.okhttp3:okhttp:3.11.0'
     compile 'com.alibaba:fastjson:1.2.51'
+    compile 'com.tencent.bugly:crashreport:latest.release'
 }
