@@ -45,7 +45,7 @@ def auth_check(method):
             return method(self, *args, **kwargs)
         else:
             self.write(json.dumps({
-                'state': 2,
+                'state': 2000,
                 'message': '用户未登陆',
             }))
     return wrapper
