@@ -68,19 +68,28 @@ public class MainActivity extends AppCompatActivity implements CompoundButton.On
             public void onPanelExpanded(View panel) {
                 Log.i(TAG, "onPanelExpanded");
 
+                ListView listView = (ListView) findViewById(R.id.user_list);
+                LinearLayout.LayoutParams params = (LinearLayout.LayoutParams)listView.getLayoutParams();
+                params.height = panel.getHeight() - panel.getTop() - listView.getTop();
+                listView.setLayoutParams(params);
             }
 
             @Override
             public void onPanelCollapsed(View panel) {
                 Log.i(TAG, "onPanelCollapsed");
-                ListView listView = (ListView) findViewById(R.id.user_list);
-                listView.clearChoices();
-                listView.invalidateViews();
+//                ListView listView = (ListView) findViewById(R.id.user_list);
+//                listView.clearChoices();
+//                listView.invalidateViews();
             }
 
             @Override
             public void onPanelAnchored(View panel) {
                 Log.i(TAG, "onPanelAnchored");
+
+                ListView listView = (ListView) findViewById(R.id.user_list);
+                LinearLayout.LayoutParams params = (LinearLayout.LayoutParams)listView.getLayoutParams();
+                params.height = panel.getHeight() - panel.getTop() - listView.getTop();
+                listView.setLayoutParams(params);
             }
         });
         mLayout.setAnchorPoint(0.5f);//用来测试锚点功能
@@ -105,8 +114,6 @@ public class MainActivity extends AppCompatActivity implements CompoundButton.On
             }
         });
 
-        ///
-//        initIcons();
         // 格式设置
         TextView headTextView = (TextView)findViewById(R.id.head);
         Drawable headDrawable = getResources().getDrawable(R.mipmap.ic_launcher);
@@ -154,7 +161,7 @@ public class MainActivity extends AppCompatActivity implements CompoundButton.On
         findViewById(R.id.delete).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                unSelectUser();
+                unSelectUser(true);
             }
         });
         findViewById(R.id.route).setOnClickListener(new View.OnClickListener() {
@@ -354,7 +361,7 @@ public class MainActivity extends AppCompatActivity implements CompoundButton.On
     }
 
     private void selectUser(int userId) {
-        unSelectUser();
+        unSelectUser(false);
 
         if (markManager.userValidate(userId)) {
             findViewById(R.id.route).setVisibility(View.VISIBLE);
@@ -369,7 +376,7 @@ public class MainActivity extends AppCompatActivity implements CompoundButton.On
             Toast.makeText(this, "当前员工未定位", Toast.LENGTH_SHORT).show();
         }
     }
-    private void unSelectUser() {
+    private void unSelectUser(boolean clear) {
         if (polyline != null) {
             polyline.remove();
         }
@@ -379,8 +386,10 @@ public class MainActivity extends AppCompatActivity implements CompoundButton.On
         findViewById(R.id.attribute).setVisibility(View.GONE);
         findViewById(R.id.delete).setVisibility(View.GONE);
         findViewById(R.id.play).setVisibility(View.GONE);
-        ((ListView)findViewById(R.id.user_list)).clearChoices();
-        ((ListView)findViewById(R.id.user_list)).invalidateViews();
+        if (clear) {
+            ((ListView) findViewById(R.id.user_list)).clearChoices();
+            ((ListView) findViewById(R.id.user_list)).invalidateViews();
+        }
     }
 
     SmoothMoveMarker smoothMarker = null;

@@ -1,0 +1,29 @@
+CREATE TABLE exam_user (
+    id INTEGER PRIMARY KEY,
+    exam_id INTEGER,
+    line_id INTEGER,
+    device_id VARCHAR(20),
+    username VARCHAR(20),
+    latitude DOUBLE,
+    longitude DOUBLE,
+    score DOUBLE,
+    create_time TIMESTAMP,
+    pos_update_time TIMESTAMP
+);
+CREATE INDEX exam_user_exam ON exam_user (exam_id);
+CREATE INDEX exam_user_line ON exam_user (line_id);
+CREATE INDEX exam_user_device ON exam_user (device_id);
+
+INSERT INTO exam_user (exam_id, line_id, device_id, latitude, longitude, username, score, create_time) values (1, 1, '9C:2E:A1:EC:93:6F', 28.264273, 113.054325, 'Test', 50.1, '2018-11-08T21:46:20.257750');
+INSERT INTO exam_user (exam_id, line_id, device_id, latitude, longitude, username, score, create_time) values (1, 1, 'A8:0C:63:26:ED:EB', 28.264273, 113.054325, '李刚', 50.1, '2018-11-08T21:46:20.257750');
+INSERT INTO exam_user (exam_id, line_id, device_id, latitude, longitude, username, score, create_time) values (1, 1, '04:B1:67:6E:80:A0', 28.356309, 113.077853, '张明亮', 50.1, '2018-11-08T21:46:20.257750');
+INSERT INTO exam_user (exam_id, line_id, device_id, latitude, longitude, username, score, create_time) values (1, 1, '90:F0:52:07:E2:1F', 28.345544, 113.051234, '程致远', 50.1, '2018-11-08T21:46:20.257750');
+INSERT INTO exam_user (exam_id, line_id, device_id, latitude, longitude, username, score, create_time) values (1, 1, '14:A5:1A:22:5B:CA', NULL, NULL, '安江', 50.1, '2018-11-08T21:46:20.257750');
+INSERT INTO exam_user (exam_id, line_id, device_id, latitude, longitude, username, score, create_time) values (1, 1, 'AC:07:5F:DB:56:53', 28.357441, 113.076349, '孔令辰', 50.1, '2018-11-08T21:46:20.257750');
+INSERT INTO exam_user (exam_id, line_id, device_id, latitude, longitude, username, score, create_time) values (1, 1, 'B0:55:08:20:80:90', 28.356302, 113.077685, '李渊', 50.1, '2018-11-08T21:46:20.257750');
+INSERT INTO exam_user (exam_id, line_id, device_id, latitude, longitude, username, score, create_time) values (1, 1, '84:9f:b5:99:5c:7f', NULL, NULL, '李克清', 50.1, '2018-11-08T21:46:20.257750');
+INSERT INTO exam_user (exam_id, line_id, device_id, latitude, longitude, username, score, create_time) values (1, 1, '20:54:FA:B8:BF:A4', 28.355116,113.02304, '黄治云', 50.1, '2018-11-08T21:46:20.257750');
+INSERT INTO exam_user (exam_id, line_id, device_id, latitude, longitude, username, score, create_time) values (1, 1, '98:9C:57:C2:2A:6D', NULL, NULL, '杨军', 50.1, '2018-11-08T21:46:20.257750')
+
+INSERT INTO exam_user (exam_id, line_id, device_id, latitude, longitude, username, score, create_time) values (1, 1, '02:00:00:00:00:00', NULL, NULL, '李克清', 50.1, '2018-11-08T21:46:20.257750');
+INSERT INTO exam_user (exam_id, line_id, device_id, latitude, longitude, username, score, create_time) values (1, 1, 'A0:57:E3:71:06:DE', NULL, NULL, '葛玉迪', 50.1, '2018-11-08T21:46:20.257750')
