@@ -7,7 +7,7 @@
             <v-list>
               <v-list-tile v-for="item in items" :key="item.id" @click="pathSelected(item)">
                 <v-list-tile-action>
-                  <v-checkbox off-icon="bookmark" on-icon="bookmark_border">star</v-checkbox>
+                  <v-checkbox off-icon="favorite" on-icon="favorite_border" v-model="item.valid" @change="updateState(item)">star</v-checkbox>
                 </v-list-tile-action>
 
                 <v-list-tile-content>
@@ -38,7 +38,7 @@
         </v-flex>
         <v-flex lg9 v-if="selected">
           <v-toolbar flat color="white">
-            <v-toolbar-title>{{ selected.name }}</v-toolbar-title>
+            <v-toolbar-title>{{ selected.name + (selected.valid ? '(有效)' : '(无效)') }}</v-toolbar-title>
             <v-divider class="mx-2" inset vertical></v-divider>
             <v-spacer></v-spacer>
             <v-dialog v-model="dialog" max-width="800px">
@@ -51,30 +51,32 @@
                 <v-card-text>
                   <v-container grid-list-md>
                     <v-layout wrap>
+                      <v-flex xs12 sm6 md4>
+                        <v-text-field v-model="editedItem.level1" label="高"></v-text-field>
+                      </v-flex>
+                      <v-flex xs12 sm6 md4>
+                        <v-text-field v-model="editedItem.level2" label="中"></v-text-field>
+                      </v-flex>
+                      <v-flex xs12 sm6 md4>
+                        <v-text-field v-model="editedItem.level3" label="低"></v-text-field>
+                      </v-flex>
                       <v-flex xs12 sm6 md6>
                         <v-text-field v-model="editedItem.x" label="X"></v-text-field>
                       </v-flex>
                       <v-flex xs12 sm6 md6>
                         <v-text-field v-model="editedItem.y" label="Y"></v-text-field>
                       </v-flex>
-                      <v-flex xs12 sm6 md4>
-                        <v-text-field v-model="editedItem.leve1" label="高"></v-text-field>
+                      <v-flex xs2 sm1 md1>
+                        <v-checkbox v-model="editedItem.senable"></v-checkbox>
                       </v-flex>
-                      <v-flex xs12 sm6 md4>
-                        <v-text-field v-model="editedItem.leve2" label="中"></v-text-field>
+                      <v-flex xs10 sm5 md5>
+                        <v-text-field slot="activator" label="开始时间" v-model="editedItem.stime" append-icon="access_time" :readonly="!editedItem.senable"></v-text-field>
                       </v-flex>
-                      <v-flex xs12 sm6 md4>
-                        <v-text-field v-model="editedItem.leve3" label="低"></v-text-field>
+                      <v-flex xs2 sm1 md1>
+                        <v-checkbox v-model="editedItem.eenable"></v-checkbox>
                       </v-flex>
-                      <v-flex xs12 sm6 md6>
-                        <!-- <v-checkbox v-model="editedItem.senable" label="开始时间"></v-checkbox> -->
-                        <v-text-field v-model="editedItem.stime" />
-                        <!-- <v-time-picker v-model="editedItem.stime" class="mt-3" format="24hr" :readonly="!editedItem.senable" /> -->
-                      </v-flex>
-                      <v-flex xs12 sm6 md6>
-                        <!-- <v-checkbox v-model="editedItem.eenable" label="结束时间"></v-checkbox> -->
-                        <v-text-field v-model="editedItem.etime" />
-                        <!-- <v-time-picker v-model="editedItem.etime" class="mt-3" format="24hr" :readonly="!editedItem.eenable" /> -->
+                      <v-flex xs10 sm5 md5>
+                        <v-text-field slot="activator" label="结束时间" v-model="editedItem.etime" append-icon="access_time" :readonly="!editedItem.eenable"></v-text-field>
                       </v-flex>
                     </v-layout>
                   </v-container>
@@ -88,7 +90,7 @@
               </v-card>
             </v-dialog>
           </v-toolbar>
-          <v-data-table :headers="headers" :items="desserts" hide-actions>
+          <v-data-table :headers="headers" :items="selected.points || []" hide-actions>
             <template slot="items" slot-scope="props">
               <!-- <td>{{ props.item.order }}</td> -->
               <td>{{ props.item.x }}</td>
@@ -106,6 +108,9 @@
                   delete
                 </v-icon>
               </td>
+            </template>
+            <template slot="no-data">
+              <div></div>
             </template>
           </v-data-table>
           <div class="text-xs-right">
@@ -136,7 +141,6 @@ export default {
       { text: '结束时间', value: 'carbs', sortable: false },
       { text: '动作', value: 'name', sortable: false }
     ],
-    desserts: [],
     editedIndex: -1,
     editedItem: {
       x: '',
@@ -179,19 +183,22 @@ export default {
       this.axios.get('/api/admin/examline/list').then((response) => {
         if (response.data.state === 1) {
           this.items = response.data.exam_line;
+          this.items.forEach((item) => {
+            item.valid = item.valid === 1 ? true : false;
+          });
         }
       });
     },
 
     editItem (item) {
-      this.editedIndex = this.desserts.indexOf(item);
+      this.editedIndex = this.selected.points.indexOf(item);
       this.editedItem = Object.assign({}, item);
       this.dialog = true;
     },
 
     deleteItem (item) {
-      const index = this.desserts.indexOf(item);
-      confirm('是否删除此点?') && this.desserts.splice(index, 1);
+      const index = this.selected.points.indexOf(item);
+      confirm('是否删除此点?') && this.selected.points.splice(index, 1);
     },
 
     close () {
@@ -204,9 +211,9 @@ export default {
 
     save () {
       if (this.editedIndex > -1) {
-        Object.assign(this.desserts[this.editedIndex], this.editedItem);
+        Object.assign(this.selected.points[this.editedIndex], this.editedItem);
       } else {
-        this.desserts.push(this.editedItem);
+        this.selected.points.push(this.editedItem);
       }
       this.close();
     },
@@ -216,11 +223,19 @@ export default {
       this.axios.get('/api/admin/examline?lineid=' + item.id).then((response) => {
         if (response.data.state === 1) {
           let data = response.data.exam_line;
-          // data = data;
+          data.points = JSON.parse(data.points);
+          data.valid = data.valid === 1 ? true : false;
+          console.log(data);
           this.selected = data;
         } else {
           alert(response.data.message);
         }
+      });
+    },
+    updateState (item) {
+      console.log(item.valid);
+      this.axios.post('/api/admin/examline', 'lineid=' + item.id + '&valid=' + (item.valid ? '1' : '2')).then((response) => {
+        console.log(response.data);
       });
     },
     exitPath () {
@@ -244,10 +259,9 @@ export default {
       }
     },
     saveExamLine () {
-      console.log('');
-    },
-    enableStartTime () {
-      console.log('xx');
+      this.axios.post('/api/admin/examline', 'lineid=' + this.selected.id + '&points=' + JSON.stringify(this.selected.points)).then((response) => {
+        console.log(response);
+      });
     }
   }
 };

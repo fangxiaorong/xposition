@@ -171,11 +171,11 @@ class BaseTable(object):
 
         try:
             cursor.executemany(sql_str, records)
-            record_id = cursor.lastrowid
             cursor.connection.commit()
         except Exception as e:
-            pass
-        return record_id
+            print(e)
+            return False
+        return True
 
     def _update_record(self, cursor, record_id, **kwargs):
         sql_str = '''
@@ -183,44 +183,97 @@ class BaseTable(object):
         ''' % (self._table, '=?,'.join(kwargs.keys()) + '=?')
 
         try:
-            values = kwargs.values()
+            values = [v for v in kwargs.values()]
             values.append(record_id)
-            cursor.execute(sql_str, values)
+            cursor.execute(sql_str, tuple(values))
+            cursor.connection.commit()
+            return True
         except Exception as e:
-            raise e
+            print(e)
+        return False
+
+    def _delete_record(self, cursor, **kwargs):
+        sql_str = '''
+            DELETE FROM %s WHERE %s
+        ''' % (self._table, '=? and '.join(kwargs.keys()) + '=?')
+        try:
+            return cursor.execute(sql_str, tuple(kwargs.values()))
+        except Exception as e:
+            print(e)
+        return False
 
 class Exam(BaseTable):
     def __init__(self):
         super(Exam, self).__init__('exam')
+        self._exam_active_id = 'exam_active_id'
 
     def new_record(self, cursor, name):
         return self._new_record(cursor, name=name, state=1, create_time=datetime.now().isoformat())
 
     def query_records(self, cursor, **kwargs):
-        return self._query_record(cursor, ('id', 'name', 'username', 'state', 'create_time'), **kwargs)
+        result = self._query_record(cursor, ('id', 'name', 'state', 'create_time'), **kwargs)
+        if result:
+            active_item_id = r_conn.hget(self._exam_active_id, '-1') or b'-1'
+            active_item_id = int(active_item_id)
+        else:
+            active_item_id = -1
+        return (result, active_item_id)
 
     def query_record(self, cursor, **kwargs):
-        result = self._query_record(cursor, ('id', 'name', 'username', 'state', 'create_time'), **kwargs)
+        result = self._query_record(cursor, ('id', 'name', 'state', 'create_time'), **kwargs)
         if result:
-            return result[0]
+            active_item_id = r_conn.hget(self._exam_active_id, '-1') or b'-1'
+            active_item_id = int(active_item_id)
+            return (result[0], active_item_id)
         else:
-            return None
+            return (None, -1)
+
+    def update_active(self, cursor, exam_id):
+        if not r_conn.hexists(self._exam_active_id, str(exam_id)):
+            self._update_record(cursor, exam_id, state=2)
+            return r_conn.hmset(self._exam_active_id, {str(exam_id): 1, '-1': exam_id})
+        return None
 
 class ExamUser(BaseTable):
     def __init__(self):
         super(ExamUser, self).__init__('exam_user')
 
     def import_records(self, cursor, users):
-        time_now = [datetime.now().isoformat()]
+        time_now = datetime.now().isoformat()
 
-        users = [user + time_now for user in users]
+        users = [(user.get('exam_id'), user.get('line_id'), user.get('device_id'), user.get('username'), time_now) for user in users]
         self._new_records(cursor, ['exam_id', 'line_id', 'device_id', 'username', 'create_time'], users)
 
     def update_record(self, cursor, record_id, **kwargs):
         self._update_record(cursor, record_id, **kwargs)
 
     def query_records(self, cursor, **kwargs):
-        return self._query_record(cursor, ('id', 'exam_id', 'line_id', 'device_id', 'username', 'score'), **kwargs)
+        exam_users = self._query_record(cursor, ('id', 'exam_id', 'line_id', 'device_id', 'username', 'score'), **kwargs)
+        if exam_users:
+            line_dict = {}
+            try:
+                line_ids = []
+                for exam_user in exam_users:
+                    line_id = exam_user.get('id')
+                    if line_id is not None:
+                        line_ids.append(str(line_id))
+                if len(line_id) > 0:
+                    sql_str = '''
+                        SELECT id, name FROM exam_line WHERE id in (%s)
+                    ''' % (', '.join(fields), self._table, ' and '.join(val))
+                    cursor.execute(sql_str)
+                    for line in cursor.fetchall():
+                        line_dict.update({line.get('id'): line})
+            except Exception as e:
+                print(e)
+            for exam in exam_users:
+                line_id = exam.get('line_id')
+                if line_id:
+                    exam.update({'line': line_dict.get(exam.get('line_id'))})
+        return exam_users
+
+    def delete_record(self, cursor, exam_id):
+        return self._delete_record(cursor, exam_id=exam_id)
 
 class ExamLine(BaseTable):
     def __init__(self):
@@ -233,14 +286,16 @@ class ExamLine(BaseTable):
         return self._query_record(cursor, ('id', 'name', 'valid'), **kwargs)
 
     def query_record(self, cursor, **kwargs):
-        result = self._query_record(cursor, ('id', 'name', 'points'), **kwargs)
+        result = self._query_record(cursor, ('id', 'name', 'points', 'valid'), **kwargs)
         if result:
             return result[0]
         else:
             return None
 
     def update_record(self, cursor, id, **kwargs):
-        return self._update_record(cursor, id, valid=1, **kwargs)
+        if kwargs.get('valid') is None:
+            kwargs.update({'valid': 1})
+        return self._update_record(cursor, id, **kwargs)
 
 class User(BaseTable):
     def __init__(self):

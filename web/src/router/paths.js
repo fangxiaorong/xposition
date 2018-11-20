@@ -111,6 +111,18 @@ export default [
       `@/pages/Theme.vue`
     )
   },
+  {
+    path: '/settings/setting',
+    meta: {
+      breadcrumb: true,
+    },
+    name: 'Setting',
+    component: () => import(
+      /* webpackChunkName: "routes" */
+      /* webpackMode: "lazy-once" */
+      `@/pages/Setting.vue`
+    )
+  },
   // {
   //   path: '/calendar',
   //   meta: { breadcrumb: true },

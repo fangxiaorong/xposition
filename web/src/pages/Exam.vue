@@ -7,16 +7,15 @@
             <v-list>
               <v-list-tile v-for="item in exams" :key="item.id" @click="pathSelected(item)">
                 <v-list-tile-action>
-                  <v-checkbox off-icon="bookmark" on-icon="bookmark_border">star</v-checkbox>
+                  <v-btn color="primary" fab small dark outline @click.prevent="examActive(item)">
+                    <v-icon>{{ item.id === active_exam_id ? 'favorite' : 'favorite_border' }}</v-icon>
+                  </v-btn>
                 </v-list-tile-action>
 
                 <v-list-tile-content>
                   <v-list-tile-title v-text="item.name"></v-list-tile-title>
                 </v-list-tile-content>
               </v-list-tile>
-              <!-- <div class="text-xs-center">
-                <v-btn flat icon color="pink"><v-icon>add_circle</v-icon></v-btn>
-              </div> -->
               <v-dialog v-model="dialog" max-width="800px">
                 <v-btn slot="activator" color="primary" dark class="mb-2">新增</v-btn>
                 <v-card>
@@ -42,21 +41,26 @@
             <v-toolbar-title>{{ selected.name }}</v-toolbar-title>
             <v-divider class="mx-2" inset vertical></v-divider>
             <v-spacer></v-spacer>
-            <input type="file" name="importuser" @change="handleFileChange">
+            <input type="file" name="importuser" @change="handleFileChange" v-show="selected.state === 1">
           </v-toolbar>
           <v-data-table :headers="headers" :items="desserts" hide-actions>
             <template slot="items" slot-scope="props">
               <td>{{ props.item.exam_id }}</td>
-              <td><v-select :items="exam_lines" v-model="props.item.line_id"></v-select></td>
-              <!-- <td>{{ props.item.line_id }}</td> -->
+              <td v-if="selected.state === 1">
+                <v-select :items="lines" v-model="props.item.line_id" item-text="name" item-value="id"></v-select>
+              </td>
+              <td v-else>{{ props.item.line_id }}</td>
               <td>{{ props.item.username }}</td>
               <td>{{ props.item.device_id }}</td>
               <td>
               </td>
             </template>
+            <template slot="no-data">
+              <div></div>
+            </template>
           </v-data-table>
           <div class="text-xs-right">
-            <v-btn color="primary" @click="saveExamUser" v-show="desserts.length > 0">保存</v-btn>
+            <v-btn color="primary" @click="saveExamUser" v-show="desserts.length > 0 && selected.state === 1">保存</v-btn>
           </div>
         </v-flex>
       </v-layout>
@@ -69,8 +73,9 @@ export default {
   data: () => ({
     selected: undefined,
     exams: [],
+    active_exam_id: -1,
+    lines: [],
     examname: '',
-    exam_lines: ['1', '2'],
     dialog: false,
     headers: [
       { text: '考试号', value: 'name', sortable: false, align: 'left' },
@@ -110,18 +115,24 @@ export default {
   },
   methods: {
     initialize () {
-      this.axios.get('/api/admin/exams').then((response) => {
-        this.exams = response.data.exams;
-      });
-    },
+      let that = this;
+      that.axios.all([that.axios.get('/api/admin/examline/list?valid=1'), that.axios.get('/api/admin/exams')]).then(that.axios.spread((lines_resp, exams_resp) => {
+        console.log(lines_resp);
+        console.log(exams_resp);
 
-    getExamUser () {
-      this.axios.get('/api/admin/examuser/list/' + this.selected.id).then((response) => {
-        console.log(response);
-        if (response.data.state === 1) {
-          this.desserts = response.data.users;
+        if (exams_resp.data.state === 1) {
+          that.exams = exams_resp.data.exams;
+          that.active_exam_id = exams_resp.data.active_exam_id;
         }
-      });
+
+        if (lines_resp.data.state === 1) {
+          // let lines = {};
+          // lines_resp.data.exam_line.forEach((line) => {
+          //   lines[line.id] = line;
+          // });
+          that.lines = lines_resp.data.exam_line;
+        }
+      }));
     },
 
     editItem (item) {
@@ -161,6 +172,17 @@ export default {
         this.close();
       }
     },
+    examActive (item) {
+      this.axios.post('/api/admin/exam', 'exam_id=' + item.id).then((response) => {
+        console.log(response.data);
+        if (response.data.state === 1) {
+          this.active_exam_id = item.id;
+          this.selected.state = 2;
+        } else {
+          alert(response.data.message);
+        }
+      });
+    },
     handleFileChange (event) {
       if (typeof (FileReader) !== 'undefined') {
         let that = this;
@@ -175,7 +197,7 @@ export default {
             if (tmp.length >= 2 && tmp[0].trim() !== '' && tmp[1].trim() !== '') {
               result.push({
                 exam_id: that.selected.id,
-                line_id: '1',
+                line_id: that.lines[Math.floor(Math.random() * that.lines.length)].id,
                 username: tmp[0],
                 device_id: tmp[1],
               });
@@ -195,8 +217,18 @@ export default {
       this.selected = item;
       this.getExamUser();
     },
+    getExamUser () {
+      this.axios.get('/api/admin/examuser/list/' + this.selected.id).then((response) => {
+        console.log(response);
+        if (response.data.state === 1) {
+          this.desserts = response.data.users;
+        }
+      });
+    },
     saveExamUser () {
-      //
+      this.axios.post('/api/admin/examuser/list/' + this.selected.id, 'exam_users=' + JSON.stringify(this.desserts)).then((response) => {
+        console.log(response);
+      });
     }
   }
 };

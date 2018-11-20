@@ -353,25 +353,39 @@ class AdminUserList(BaseHandler):
             }))
 
 @app.route(r'/api/admin/exam')
-class AdminNewExam(BaseHandler):
+class AdminExam(BaseHandler):
     @auth_check
     def post(self):
-        exam_name = self.get_argument('name')
+        exam_id = self.get_argument('exam_id', None)
+        exam_name = self.get_argument('name', None)
+        state = self.get_argument('state', False)
 
         with CursorManager() as cursor:
             exam = table_manager(Exam)
-            exam_id = exam.new_record(cursor, exam_name)
-            if exam_id:
-                self.write(json.dumps({
-                    'state': 1,
-                    'message': '成功',
-                    'exam_id': exam_id,
-                }))
+            if exam_id is not None:
+                if exam.update_active(cursor, exam_id):
+                    self.write(json.dumps({
+                        'state': 1,
+                        'message': '成功',
+                    }))
+                else:
+                    self.write(json.dumps({
+                        'state': 2,
+                        'message': '失败',
+                    }))
             else:
-                self.write(json.dumps({
-                    'state': 2,
-                    'message': '失败',
-                }))
+                exam_id = exam.new_record(cursor, exam_name)
+                if exam_id:
+                    self.write(json.dumps({
+                        'state': 1,
+                        'message': '成功',
+                        'exam_id': exam_id,
+                    }))
+                else:
+                    self.write(json.dumps({
+                        'state': 2,
+                        'message': '失败',
+                    }))
 
 @app.route(r'/api/admin/exams')
 class AdminGetExams(BaseHandler):
@@ -379,23 +393,25 @@ class AdminGetExams(BaseHandler):
     def get(self):
         with CursorManager() as cursor:
             exam = table_manager(Exam)
-            exam_infos = exam.query_records(cursor)
+            exam_infos, active_exam_id = exam.query_records(cursor)
             self.write(json.dumps({
                 'state': 1,
                 'message': '成功',
                 'exams': exam_infos,
+                'active_exam_id': active_exam_id,
             }))
 
-@app.route(r'/api/admin/exam/(\d+)')
-class AdminGetExam(BaseHandler):
-    def get(self, exam_id):
-        with CursorManager() as cursor:
-            exam = quer_exam(cursor, id=exam_id)
-            self.write(json.dumps({
-                'state': 1,
-                'message': '成功',
-                'exam': exam,
-            }))
+# @app.route(r'/api/admin/exam/(\d+)')
+# class AdminGetExam(BaseHandler):
+#     def get(self, exam_id):
+#         with CursorManager() as cursor:
+#             exam, active_exam_id = quer_exam(cursor, id=exam_id)
+#             self.write(json.dumps({
+#                 'state': 1,
+#                 'message': '成功',
+#                 'exam': exam,
+#                 'active_exam_id': active_exam_id,
+#             }))
 
 @app.route(r'/api/admin/examuser/list/(\d+)')
 class AdminGetExamUsers(BaseHandler):
@@ -410,13 +426,26 @@ class AdminGetExamUsers(BaseHandler):
                 'users': exam_user_infos,
             }));
 
+    @auth_check
+    def post(self, exam_id):
+        exam_users = self.get_argument('exam_users', None)
+        if exam_users and exam_id:
+            exam_users = json.loads(exam_users)
+            with CursorManager() as cursor:
+                exam_user = table_manager(ExamUser)
+                exam_user.delete_record(cursor, exam_id=exam_id)
+                exam_user.import_records(cursor, exam_users)
+        self.write('')
+
 @app.route(r'/api/admin/examline/list')
 class AdminGetExamLines(BaseHandler):
     @auth_check
     def get(self):
+        valid = self.get_argument('valid', None)
+
         with CursorManager() as cursor:
             exam_line = table_manager(ExamLine)
-            exam_line_infos = exam_line.query_records(cursor)
+            exam_line_infos = exam_line.query_records(cursor) if valid is None else exam_line.query_records(cursor, valid=valid)
             self.write(json.dumps({
                 'state': 1,
                 'message': '成功',
@@ -446,8 +475,10 @@ class AdminSaveLine(web.RequestHandler):
         lineid = self.get_argument('lineid', None)
         name = self.get_argument('name', None)
         points = self.get_argument('points', None)
+        valid = self.get_argument('valid', None)
+        print(valid)
 
-        if name is None:
+        if name is None and lineid is None:
             self.write(json.dumps({
                 'state': 3,
                 'message': '名字不能为空！'
@@ -459,7 +490,14 @@ class AdminSaveLine(web.RequestHandler):
 
             result = None
             if lineid:
-                result = exam_line.update_record(cursor, lineid, name=name, points=points)
+                kwargs = {}
+                if name is not None:
+                    kwargs.update({'name': name})
+                if points is not None:
+                    kwargs.update({'points': points})
+                if valid is not None:
+                    kwargs.update({'valid': valid})
+                result = exam_line.update_record(cursor, int(lineid), **kwargs)
             else:
                 result = exam_line.new_record(cursor, name=name)
             

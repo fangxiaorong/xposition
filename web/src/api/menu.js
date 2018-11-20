@@ -152,7 +152,7 @@ const Menu =  [
     component: 'picker',
     icon: 'filter_vintage',
     items: [
-      { name: 'timepicker', title: '系统设置', component: 'pickers/timepicker' },     
+      { name: 'Setting', title: '系统设置', component: 'Setting' },     
       { name: 'Theme', title: '主题设置', component: 'Theme' },      
 
     ]
