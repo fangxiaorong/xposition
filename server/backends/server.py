@@ -480,7 +480,7 @@ class AdminImportUsers(web.RequestHandler):
 
 # 初始化数据库
 
-@app.route(r'/admin/init')
+@app.route(r'/api/admin/init')
 class AdminInit(web.RequestHandler):
     def get(self):
         print(self.request)
