@@ -44,6 +44,7 @@ Vue.use(Vuetify, {
 
 
 // axios.defaults.baseURL = 'http://127.0.0.1:8002/api/';
+// axios.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded;charset=UTF-8';
 
 
 /* eslint-disable no-new */

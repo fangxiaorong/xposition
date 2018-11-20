@@ -138,7 +138,7 @@ export default {
         if (this.editedIndex > -1) {
           Object.assign(this.users[this.editedIndex], this.editedItem);
         } else {
-          let data = 'username=' + this.editedItem.username.trim() + '&nickname=' + this.editedItem.nickname.trim() + '&password=' + md5(this.editedItem.password.trim());
+          let data = 'username=' + this.editedItem.username.trim() + '&nickname=' + encodeURI(this.editedItem.nickname.trim()) + '&password=' + md5(this.editedItem.password.trim());
           this.axios.post('/api/admin/user/add', data).then((response) => {
             // console.log(response);
             this.initialize();
