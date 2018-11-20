@@ -223,9 +223,8 @@ export default {
       this.axios.get('/api/admin/examline?lineid=' + item.id).then((response) => {
         if (response.data.state === 1) {
           let data = response.data.exam_line;
-          data.points = JSON.parse(data.points);
+          data.points = JSON.parse(data.points) || [];
           data.valid = data.valid === 1 ? true : false;
-          console.log(data);
           this.selected = data;
         } else {
           alert(response.data.message);
