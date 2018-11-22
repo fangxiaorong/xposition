@@ -41,6 +41,7 @@ public class AttributeActivity extends BaseActivity {
                         try {
                             JSONObject points = JSON.parseObject(response.body().string());
                             adapter.updateData(points.getJSONArray("points"));
+                            ((TextView) findViewById(R.id.head)).setText(points.getString("line_name") + ":  " + points.getString("total_score"));
                         } catch (Exception e) {}
                     }
                 });

@@ -53,7 +53,7 @@ export default {
       {
         icon: 'account_circle',
         href: '#',
-        title: 'Profile',
+        title: '个人信息',
         click: (e) => {
           console.log(e);
         }
@@ -61,7 +61,7 @@ export default {
       {
         icon: 'settings',
         href: '#',
-        title: 'Settings',
+        title: '设置',
         click: (e) => {
           console.log(e);
         }
@@ -69,7 +69,7 @@ export default {
       {
         icon: 'fullscreen_exit',
         href: '#',
-        title: 'Logout',
+        title: '退出',
         click: (e) => {
           window.getApp.$emit('APP_LOGOUT');
         }

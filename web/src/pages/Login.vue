@@ -12,13 +12,13 @@
                   <div style="color: red;">{{ message }}</div>
                 </div>                
                 <v-form>
-                  <v-text-field append-icon="person" name="login" label="Login" type="text" v-model="model.username"></v-text-field>
-                  <v-text-field append-icon="lock" name="password" label="Password" id="password" type="password" v-model="model.password"></v-text-field>
+                  <v-text-field append-icon="person" name="login" label="用户名" type="text" v-model="model.username"></v-text-field>
+                  <v-text-field append-icon="lock" name="password" label="密码" id="password" type="password" v-model="model.password"></v-text-field>
                 </v-form>
               </v-card-text>
               <v-card-actions>
                 <v-spacer></v-spacer>
-                <v-btn block color="primary" @click="login" :loading="loading">Login</v-btn>
+                <v-btn block color="primary" @click="login" :loading="loading">登陆</v-btn>
               </v-card-actions>
             </v-card>
           </v-flex>

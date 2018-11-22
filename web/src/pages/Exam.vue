@@ -226,7 +226,7 @@ export default {
       });
     },
     saveExamUser () {
-      this.axios.post('/api/admin/examuser/list/' + this.selected.id, 'exam_users=' + JSON.stringify(this.desserts)).then((response) => {
+      this.axios.post('/api/admin/examuser/list/' + this.selected.id, 'exam_users=' + encodeURI(JSON.stringify(this.desserts))).then((response) => {
         console.log(response);
       });
     }
