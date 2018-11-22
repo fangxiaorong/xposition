@@ -37,20 +37,20 @@
             android:theme="@style/AppTheme">
 
         <!--debug-->
-        <!--<meta-data android:name="com.amap.api.v2.apikey" android:value="6688d8f697b2f36ac7b00df20658d719"></meta-data>-->
+        <meta-data android:name="com.amap.api.v2.apikey" android:value="6688d8f697b2f36ac7b00df20658d719"></meta-data>
         <!--online-->
-        <meta-data android:name="com.amap.api.v2.apikey" android:value="ef10322f40dee0314cd6f4ef98f38a73"/>
+        <!--<meta-data android:name="com.amap.api.v2.apikey" android:value="ef10322f40dee0314cd6f4ef98f38a73"/>-->
         <meta-data android:value="5be63414b465f52d50001010" android:name="UMENG_APPKEY"/>
         <meta-data android:value="main" android:name="UMENG_CHANNEL"/>
 
-        <activity android:name=".LoginActivity">
+        <activity android:name=".LoginActivity" android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
-        <activity android:name=".MainActivity" />
-        <activity android:name=".AttributeActivity" />
+        <activity android:name=".MainActivity" android:screenOrientation="portrait" />
+        <activity android:name=".AttributeActivity" android:screenOrientation="portrait" />
 
         <service android:name="com.amap.api.location.APSService"></service>
     </application>

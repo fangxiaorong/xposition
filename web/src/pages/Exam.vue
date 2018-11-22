@@ -49,7 +49,7 @@
               <td v-if="selected.state === 1">
                 <v-select :items="lines" v-model="props.item.line_id" item-text="name" item-value="id"></v-select>
               </td>
-              <td v-else>{{ props.item.line_id }}</td>
+              <td v-else>{{ props.item.line ? props.item.line.name : props.item.line_id }}</td>
               <td>{{ props.item.username }}</td>
               <td>{{ props.item.device_id }}</td>
               <td>

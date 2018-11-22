@@ -4,7 +4,6 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.os.Handler;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.util.Pair;
@@ -22,18 +21,17 @@ import com.amap.api.maps.MapView;
 import com.amap.api.maps.model.*;
 import com.amap.api.maps.utils.SpatialRelationUtil;
 import com.amap.api.maps.utils.overlay.SmoothMoveMarker;
+import job.fscience.com.lib.AuthCallback;
+import job.fscience.com.lib.BaseActivity;
 import job.fscience.com.lib.MapMarkManager;
 import job.fscience.com.lib.SlidingUpPanelLayout;
-import job.fscience.com.net.ServerRequest;
 import okhttp3.Call;
-import okhttp3.Callback;
-import okhttp3.Response;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity implements CompoundButton.OnCheckedChangeListener {
+public class MainActivity extends BaseActivity implements CompoundButton.OnCheckedChangeListener {
     private static final String TAG = "DemoActivity";
     public static final String SAVED_STATE_ACTION_BAR_HIDDEN = "saved_state_action_bar_hidden";
     private SlidingUpPanelLayout mLayout;
@@ -56,6 +54,10 @@ public class MainActivity extends AppCompatActivity implements CompoundButton.On
         //地图模式可选类型：MAP_TYPE_NORMAL,MAP_TYPE_SATELLITE,MAP_TYPE_NIGHT
         mMap.setMapType(AMap.MAP_TYPE_NORMAL);
         markManager = new MapMarkManager(this, mMap);
+
+        ((TextView) findViewById(R.id.head)).setText(
+                XApplication.userInfo.getString("nickname") +
+                        "(" + XApplication.examInfo.getString("name") + ")");
 
         mLayout = (SlidingUpPanelLayout) findViewById(R.id.sliding_layout);
         mLayout.setPanelSlideListener(new SlidingUpPanelLayout.PanelSlideListener() {
@@ -94,15 +96,14 @@ public class MainActivity extends AppCompatActivity implements CompoundButton.On
         });
         mLayout.setAnchorPoint(0.5f);//用来测试锚点功能
 
-        XApplication.getServerInstance().managerGetExam(new Callback() {
+        XApplication.getServerInstance().managerGetExam(new AuthCallback() {
             @Override
-            public void onFailure(Call call, IOException e) {
+            public void onFailureEx(Call call, IOException e) {
                 showTextOnUIThread("网络问题");
             }
 
             @Override
-            public void onResponse(Call call, Response response) throws IOException {
-                JSONObject data = ServerRequest.parseJSON(response);
+            public void onResponseEx(JSONObject data) throws IOException {
                 if (data == null) {
                     showTextOnUIThread("服务器问题");
                 } else if (data.getInteger("state") == 1) {
@@ -132,28 +133,51 @@ public class MainActivity extends AppCompatActivity implements CompoundButton.On
             }
         });
 
-        XApplication.getServerInstance().managerGetExam(new Callback() {
+//        XApplication.getServerInstance().managerGetExam(new AuthCallback() {
+//            @Override
+//            public void onFailureEx(Call call, IOException e) {
+//                showTextOnUIThread("网络问题");
+//            }
+//
+//            @Override
+//            public void onResponseEx(final JSONObject data) throws IOException {
+//                if (data == null) {
+//                    showTextOnUIThread("服务器问题");
+//                } else if (data.getInteger("state") == 1) {
+//                    runOnUiThread(new Runnable() {
+//                        @Override
+//                        public void run() {
+//                            adapter.updateData(data.getJSONArray("users"));
+//                            showPosition(data.getJSONArray("users"));
+//                        }
+//                    });
+//
+//                } else {
+//                    showTextOnUIThread(data.getString("message"));
+//                }
+//            }
+//        });
+        XApplication.getServerInstance().managerGetExamUsers(XApplication.examInfo.getInteger("id"), new AuthCallback() {
             @Override
-            public void onFailure(Call call, IOException e) {
+            public void onFailureEx(Call call, IOException e) {
                 showTextOnUIThread("网络问题");
             }
 
             @Override
-            public void onResponse(Call call, Response response) throws IOException {
-                final JSONObject object = ServerRequest.parseJSON(response);
-                if (object == null) {
+            public void onResponseEx(final JSONObject data) throws IOException {
+                if (data == null) {
                     showTextOnUIThread("服务器问题");
-                } else if (object.getInteger("state") == 1) {
+                } else if (data.getInteger("state") == 1) {
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            adapter.updateData(object.getJSONArray("users"));
-                            showPosition(object.getJSONArray("users"));
+                            adapter.updateData(data.getJSONArray("users"));
+//                            showPosition(data.getJSONArray("users"));
                         }
                     });
 
                 } else {
-                    showTextOnUIThread(object.getString("message"));
+                    showTextOnUIThread(data.getString("message"));
                 }
             }
         });
@@ -171,15 +195,14 @@ public class MainActivity extends AppCompatActivity implements CompoundButton.On
                     polyline.remove();
                 }
 
-                XApplication.getServerInstance().managerGetUserTrack(((int) view.getTag()), new Callback() {
+                XApplication.getServerInstance().managerGetUserTrack(((int) view.getTag()), new AuthCallback() {
                     @Override
-                    public void onFailure(Call call, IOException e) {
+                    public void onFailureEx(Call call, IOException e) {
                         showTextOnUIThread("网络问题");
                     }
 
                     @Override
-                    public void onResponse(Call call, Response response) throws IOException {
-                        final JSONObject object = ServerRequest.parseJSON(response);
+                    public void onResponseEx(final JSONObject object) throws IOException {
                         if (object == null) {
                             showTextOnUIThread("服务器问题");
                         } else if (object.getInteger("state") == 1) {
@@ -227,16 +250,15 @@ public class MainActivity extends AppCompatActivity implements CompoundButton.On
         mHandler.postDelayed(new Runnable() {
             @Override
             public void run() {
-                XApplication.getServerInstance().managerGetLocations( new Callback() {
+                XApplication.getServerInstance().managerGetLocations( new AuthCallback() {
                     @Override
-                    public void onFailure(Call call, IOException e) {
+                    public void onFailureEx(Call call, IOException e) {
                         showTextOnUIThread("网络问题");
                         updatePosition();
                     }
 
                     @Override
-                    public void onResponse(Call call, Response response) throws IOException {
-                        final JSONObject object = ServerRequest.parseJSON(response);
+                    public void onResponseEx(final JSONObject object) throws IOException {
                         if (object == null) {
                             showTextOnUIThread("服务器问题");
                         } else if (object.getInteger("state") == 1) {
@@ -344,7 +366,7 @@ public class MainActivity extends AppCompatActivity implements CompoundButton.On
             JSONObject point = points.getJSONObject(idx);
 
             markManager.updateUser(
-                    point.getInteger("id"),
+                    point.getInteger("user_id"),
                     point.getString("username"),
                     point.getDouble("latitude"),
                     point.getDouble("longitude"),

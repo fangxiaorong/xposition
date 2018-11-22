@@ -69,6 +69,8 @@ public class MapMarkManager {
     Map<Integer, Marker> userMap = new HashMap<>();
     public Map<Integer, Boolean> userVisibleMap = new HashMap<>();
     public void updateUser(Integer userId, String userName, Double latitude, Double longitude, Integer state) {
+        userName = userName == null ? "(空)" : userName;
+
         Marker marker = userMap.get(userId);
         if (marker != null) {
             if (!state.equals(marker.getObject())) {

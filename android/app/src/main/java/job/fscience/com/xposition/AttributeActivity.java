@@ -1,7 +1,6 @@
 package job.fscience.com.xposition;
 
 import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,13 +10,14 @@ import android.widget.TextView;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import job.fscience.com.lib.BaseActivity;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.Response;
 
 import java.io.IOException;
 
-public class AttributeActivity extends AppCompatActivity {
+public class AttributeActivity extends BaseActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

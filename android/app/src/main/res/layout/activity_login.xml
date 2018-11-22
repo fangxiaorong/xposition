@@ -9,23 +9,54 @@
             android:scaleType="centerCrop"
             android:layout_width="match_parent"
             android:layout_height="match_parent"/>
-    <TextView
-            android:text="@string/app_name"
-            android:textColor="@android:color/white"
-            android:textSize="38sp"
-            android:paddingBottom="120sp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_centerInParent="true"/>
 
-    <TextView
-            android:id="@+id/user_id"
-            android:text="9944saadff"
-            android:textColor="@android:color/white"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_centerInParent="true"
-            android:textAppearance="@style/TextAppearance.AppCompat.Large"/>
+    <LinearLayout
+            android:orientation="vertical"
+            android:gravity="center"
+            android:layout_centerHorizontal="true"
+            android:layout_width="match_parent"
+            android:paddingTop="100sp"
+            android:layout_height="wrap_content">
+        <TextView
+                android:text="@string/app_name"
+                android:textColor="@android:color/white"
+                android:textSize="38sp"
+                android:paddingBottom="60sp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+
+        <EditText
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:inputType="textPersonName"
+                android:hint="用户名"
+                android:textColorHint="#CCC"
+                android:background="@drawable/login_shadow"
+                android:textColor="@android:color/white"
+                android:ems="10"
+                android:layout_centerVertical="true" android:layout_centerHorizontal="true" android:id="@+id/nameText"/>
+        <EditText
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:inputType="textPassword"
+                android:hint="密码"
+                android:background="@drawable/login_shadow"
+                android:textColor="@android:color/white"
+                android:textColorHint="#CCC"
+                android:ems="10"
+                android:layout_below="@+id/editText" android:layout_alignRight="@+id/editText"
+                android:layout_alignEnd="@+id/editText" android:layout_marginTop="30dp" android:id="@+id/passwordText"/>
+    </LinearLayout>
+
+
+    <!--<TextView-->
+            <!--android:id="@+id/user_id"-->
+            <!--android:text="9944saadff"-->
+            <!--android:textColor="@android:color/white"-->
+            <!--android:layout_width="wrap_content"-->
+            <!--android:layout_height="wrap_content"-->
+            <!--android:layout_centerInParent="true"-->
+            <!--android:textAppearance="@style/TextAppearance.AppCompat.Large"/>-->
 
     <TextView
             android:id="@+id/login"
@@ -38,4 +69,5 @@
             android:layout_marginBottom="40dp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"/>
+
 </RelativeLayout>

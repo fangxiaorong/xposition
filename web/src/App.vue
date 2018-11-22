@@ -78,7 +78,7 @@ export default {
   methods: {
     checkLogin () {
       this.axios.get('/api/admin/login').then((response) => {
-        if (response.data.state === 2) {
+        if (response.data.state === 2000) {
           window.getApp.$emit('APP_AUTH_FAILED');
         }
       });

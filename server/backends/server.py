@@ -12,29 +12,13 @@ import sqlite3
 from tornado import web
 import functools
 
-conn = sqlite3.connect('server/db/test.db')
-exam_conn = None
-
-pos_map = {}
-
-
-class BaseHandler(web.RequestHandler):
-    def set_default_headers(self):
-        self.set_header('Access-Control-Allow-Origin', '*')
-        self.set_header('Content-Type', 'application/x-www-form-urlencoded')
-
-# from backends import init_db, CursorManager, query_user, upload_position, query_line, query_position, Session
 from backends import *
 
-class RouteConfig(web.Application):
-    def route(self, url):
-        def register(handler):
-            self.add_handlers('.*$', [(url, handler)])
-            return handler
-        return register
-        
-app = RouteConfig(cookie_secret='Zxyo8feo0Ujlx', xsrf_cookies=False, debug=True)
-session = Session()
+### 启动
+exam_id = table_manager(Exam).get_active_id()
+if exam_id:
+    table_manager(UserRecord, str(exam_id), True)
+###
 
 def auth_check(method):
     @functools.wraps(method)
@@ -50,6 +34,21 @@ def auth_check(method):
             }))
     return wrapper
 
+class BaseHandler(web.RequestHandler):
+    def set_default_headers(self):
+        self.set_header('Access-Control-Allow-Origin', '*')
+        self.set_header('Content-Type', 'application/x-www-form-urlencoded')
+
+class RouteConfig(web.Application):
+    def route(self, url):
+        def register(handler):
+            self.add_handlers('.*$', [(url, handler)])
+            return handler
+        return register
+
+app = RouteConfig(cookie_secret='Zxyo8feo0Ujlx', xsrf_cookies=False, debug=True)
+session = Session()
+
 @app.route(r'/')
 class HomeIndex(web.RequestHandler):
     def get(self):
@@ -58,27 +57,43 @@ class HomeIndex(web.RequestHandler):
 # 用户端接口
 
 @app.route(r'/api/user/login/([^/]*)')
-class UserLogin(web.RequestHandler):
+class UserLogin(BaseHandler):
     def get(self, device_id):
-        with CursorManager() as cursor:
-            users = query_user(cursor, device_id=device_id)
-            if users:
-                self.write(json.dumps({
-                    'state': 1,
-                    'message': '成功',
-                    'user': users[0]
-                }))
-            else:
-                self.write(json.dumps({
-                    'state': 10,
-                    'message': '用户未找到'
-                }))
+        exam = table_manager(Exam)
+        active_id = exam.get_active_id()
+        if active_id >= 0:
+            with CursorManager() as cursor:
+                exam_user = table_manager(ExamUser)
+                users = exam_user.query_records(cursor, device_id=device_id, exam_id=active_id)
+                if users:
+                    self.write(json.dumps({
+                        'state': 1,
+                        'message': '成功',
+                        'user': users[0]
+                    }))
+                else:
+                    self.write(json.dumps({
+                        'state': 10,
+                        'message': '用户未找到'
+                    }))
+        else:
+            self.write(json.dumps({
+                'state': 3,
+                'message': '暂未设置考试'
+            }))
 
 @app.route(r'/api/user/position')
 class UserUploadPosition(web.RequestHandler):
     def post(self):
-        with CursorManager() as cursor:
-            upload_position(cursor, params.get('user_id'), params.get('latitude'), params.get('longitude'), params.get('type'))
+        exam_id = table_manager(Exam).get_active_id()
+        if exam_id:
+            user_record = table_manager(UserRecord, str(exam_id), False)
+            if user_record:
+                user_id = int(self.get_argument('user_id'))
+                latitude = float(self.get_argument('latitude'))
+                longitude = float(self.get_argument('longitude'))
+                manual = int(self.get_argument('manual'))
+                user_record.add_record(user_id, latitude, longitude, manual)
 
         self.write(json.dumps({
             'state': 1,
@@ -99,176 +114,79 @@ class UserGetLine(web.RequestHandler):
 
 # 管理端App接口
 
-@app.route(r'/api/manager/login')
-class ManagerLogin(web.RequestHandler):
-    @auth_check
-    def get(self):
-        if self.user_info:
-            self.write(json.dumps({
-                'user_info': self.user_info,
-                'state': 1,
-                'message': '成功',
-            }))
-        else:
-            self.write(json.dumps({
-                'state': 2,
-                'message': '用户未登陆',
-            }))
-
-    def post(self):
-        username = self.get_argument("username")
-        password = self.get_argument("password")
-
-        state = 1
-        message = '成功'
-        user_info = None
-        if username and password:
-            with CursorManager() as cursor:
-                user_info = query_user(cursor, username, password)
-                if user_info:
-                    if user_info.pop('password') == password:
-                        self.set_secure_cookie("session_id", session.get_session_id(user_info))
-                    else:
-                        user_info = None
-                        state = 2
-                        message = '密码错误'
-                else:
-                    state = 3
-                    message = '用户未找到'
-
-        self.write(json.dumps({
-            'state': state,
-            'message': message,
-            'user_info': user_info
-        }))
-
 @app.route(r'/api/manager/exam')
 class ManagerGetExam(BaseHandler):
     @auth_check
     def get(self):
-        with CursorManager() as cursor:
-            users = query_user(cursor)
-            if users:
-                for location in users:
-                    update_time = location.get('pos_update_time')
-                    if update_time:
-                        update_time = datetime.strptime(update_time, '%Y-%m-%dT%H:%M:%S.%f')
-                    else:
-                        update_time = datetime(2000, 1, 1)
-                    if location.get('latitude') and location.get('longitude'):
-                        if (datetime.now() - update_time).total_seconds() < 300:
-                            location.update({'state': 1})
-                        else:
-                            location.update({'state': 2})
-                    else:
-                        location.update({'state': 3})
-
-                self.write(json.dumps({
-                    'state': 1,
-                    'message': '成功',
-                    'users': users
-                }))
-            else:
-                self.write(json.dumps({
-                    'state': 10,
-                    'message': '没有数据',
-                }))
+        exam = table_manager(Exam)
+        active_id = exam.get_active_id()
+        if active_id >= 0:
+            with CursorManager() as cursor:
+                exam_info, active_id = exam.query_record(cursor, id=active_id)
+                if exam_info:
+                    self.write(json.dumps({
+                        'state': 1,
+                        'message': '成功',
+                        'info': exam_info,
+                        'active_id': active_id,
+                    }))
+                else:
+                    self.write(json.dumps({
+                        'state': 2,
+                        'message': '数据为空',
+                    }))
+        else:
+            self.write(json.dumps({
+                'state': 3,
+                'message': '考试未设置',
+            }))
 
 @app.route(r'/api/manager/locations')
 class ManagerGetLocations(web.RequestHandler):
+    @auth_check
     def get(self):
-        with CursorManager() as cursor:
-            locations = query_position(cursor)
-            if locations:
-                for location in locations:
-                    update_time = location.get('pos_update_time')
-                    if update_time:
-                        update_time = datetime.strptime(update_time, '%Y-%m-%dT%H:%M:%S.%f')
-                    else:
-                        update_time = datetime(2000, 1, 1)
-                    if location.get('latitude') and location.get('longitude'):
-                        if (datetime.now() - update_time).total_seconds() < 300:
-                            location.update({'state': 1})
-                        else:
-                            location.update({'state': 2})
-                    else:
-                        location.update({'state': 3})
-
-                self.write(json.dumps({
-                    'state': 1,
-                    'message': '成功',
-                    'locations': locations
-                }))
-            else:
-                self.write(json.dumps({
-                    'state': 10,
-                    'message': '没有数据',
-                }))
+        exam_user = table_manager(ExamUser)
+        locations = exam_user.query_locations()
+        if locations:
+            self.write(json.dumps({
+                'state': 1,
+                'message': '成功',
+                'locations': locations
+            }))
+        else:
+            self.write(json.dumps({
+                'state': 10,
+                'message': '没有数据',
+            }))
 
 @app.route(r'/api/manager/track/(\d+)')
-class ManagerGetUserTrack(web.RequestHandler):
+class ManagerGetUserTrack(BaseHandler):
     def get(self, user_id):
-        # with CursorManager() as cursor:
-        #     pass
-        self.write(json.dumps({
-            "state": 1,
-            "message": '成功',
-            "points": [
-                { "latitude": 39.78620582307232, "longitude": 116.31460294485826, },
-                { "latitude": 39.77620582307232, "longitude": 116.32460294485826, },
-                { "latitude": 39.76620582307232, "longitude": 116.32460294485826, },
-                { "latitude": 39.76620582307232, "longitude": 116.32460294485826, },
-                { "latitude": 39.75620582307232, "longitude": 116.33460294485826, },
-                { "latitude": 39.75620582307232, "longitude": 116.33460294485826, },
-                { "latitude": 39.74620582307232, "longitude": 116.33460294485826, },
-                { "latitude": 39.74620582307232, "longitude": 116.33460294485826, },
-                { "latitude": 39.74620582307232, "longitude": 116.33460294485826, },
-                { "latitude": 39.73620582307232, "longitude": 116.34460294485826, },
-                { "latitude": 39.74620582307232, "longitude": 116.34460294485826, },
-                { "latitude": 39.73620582307232, "longitude": 116.34460294485826, },
-                { "latitude": 39.73620582307232, "longitude": 116.35460294485826, },
-                { "latitude": 39.73620582307232, "longitude": 116.35460294485826, },
-                { "latitude": 39.74620582307232, "longitude": 116.35460294485826, },
-                { "latitude": 39.73620582307232, "longitude": 116.35460294485826, },
-                { "latitude": 39.72620582307232, "longitude": 116.34460294485826, },
-                { "latitude": 39.72620582307232, "longitude": 116.34460294485826, },
-                { "latitude": 39.72620582307232, "longitude": 116.34460294485826, },
-                { "latitude": 39.71620582307232, "longitude": 116.34460294485826, },
-                { "latitude": 39.71620582307232, "longitude": 116.34460294485826, },
-            ]
-        }))
+        exam_id = table_manager(Exam).get_active_id()
+        if exam_id:
+            user_record = table_manager(UserRecord, str(exam_id), False)
+            points = user_record.query_records(int(user_id))
+
+            self.write(json.dumps({
+                'state': 1,
+                'message': '成功',
+                'points': points
+            }))
+        else:
+            self.write(json.dumps({
+                'state': 10,
+                'message': '无考试记录'
+            }))
 
 @app.route(r'/api/manager/user/result/(\d+)')
 class ManagerGetUserResult(web.RequestHandler):
     def get(self, user_id):
-        self.write(json.dumps({
-            "stat": 1,
-            "linename": "xxx",
-            "total_score": 88.8,
-            "points": [
-                {
-                    "id": 1,
-                    "latitude": 39.78620582307232,
-                    "longitude": 116.31460294485826,
-                    "weight": 0.3,
-                    "score": 1
-                },
-                {
-                    "id": 2,
-                    "latitude": 39.88620582307232,
-                    "longitude": 116.31460294485826,
-                    "weight": 0.5,
-                    "score": 1
-                },
-                {
-                    "id": 3,
-                    "latitude": 39.88620582307232,
-                    "longitude": 116.31460294485826,
-                    "weight": 0.2,
-                    "score": 1
-                }
-            ]
-        }))
+        data = ExamCalculate.calculate(int(user_id))
+        data.update({
+            'state': 1,
+            'message': '成功',
+        })
+        self.write(json.dumps(data))
 
 # Web后台管理接口
 
@@ -414,7 +332,7 @@ class AdminGetExams(BaseHandler):
 #             }))
 
 @app.route(r'/api/admin/examuser/list/(\d+)')
-class AdminGetExamUsers(BaseHandler):
+class AdminGetExamUser(BaseHandler):
     @auth_check
     def get(self, exam_id):
         with CursorManager() as cursor:
@@ -453,7 +371,8 @@ class AdminGetExamLines(BaseHandler):
             }))
 
 @app.route(r'/api/admin/examline')
-class AdminSaveLine(web.RequestHandler):
+class AdminExamLine(BaseHandler):
+    @auth_check
     def get(self):
         lineid = self.get_argument('lineid', None)
         if lineid:
@@ -471,6 +390,7 @@ class AdminSaveLine(web.RequestHandler):
                 'message': '失败',
             }))
 
+    @auth_check
     def post(self):
         lineid = self.get_argument('lineid', None)
         name = self.get_argument('name', None)
@@ -511,10 +431,6 @@ class AdminSaveLine(web.RequestHandler):
                     'state': 2,
                     'message': '创建失败'
                 }))
-
-class AdminImportUsers(web.RequestHandler):
-    def post(self):
-        pass
 
 # 初始化数据库
 
