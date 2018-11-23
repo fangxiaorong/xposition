@@ -58,6 +58,14 @@ def init_db():
                 id INTEGER PRIMARY KEY,
                 name VARCHAR(40),
                 username VARCHAR(20),
+                level1 DOUBLE,
+                level2 DOUBLE,
+                level3 DOUBLE,
+                level4 DOUBLE,
+                score1 DOUBLE,
+                score2 DOUBLE,
+                score3 DOUBLE,
+                score4 DOUBLE,
                 state INTEGER,
                 create_time TIMESTAMP
             );
@@ -70,6 +78,7 @@ def init_db():
                 line_id INTEGER,
                 device_id VARCHAR(20),
                 username VARCHAR(20),
+                departname VARCHAR(200),
                 score DOUBLE,
                 detail TEXT,
                 create_time TIMESTAMP
@@ -417,16 +426,16 @@ class ExamCalculate(object):
 
     @classmethod
     def _transform_lat(self, x, y):
-        ret = -100.0 + 2.0 * x + 3.0 * y + 0.2 * y * y + 0.1 * x * y + 0.2 * math.sqrt(math.abs(x))
-        ret += (20.0 * math.sin(6.0 * x * pi) + 20.0 * math.sin(2.0 * x * ExamCalculate.pi)) * 2.0 / 3.0
-        ret += (20.0 * math.sin(y * ExamCalculate.pi) + 40.0 * math.sin(y / 3.0 * pi)) * 2.0 / 3.0
+        ret = -100.0 + 2.0 * x + 3.0 * y + 0.2 * y * y + 0.1 * x * y + 0.2 * math.sqrt(math.fabs(x))
+        ret += (20.0 * math.sin(6.0 * x * ExamCalculate.pi) + 20.0 * math.sin(2.0 * x * ExamCalculate.pi)) * 2.0 / 3.0
+        ret += (20.0 * math.sin(y * ExamCalculate.pi) + 40.0 * math.sin(y / 3.0 * ExamCalculate.pi)) * 2.0 / 3.0
         ret += (160.0 * math.sin(y / 12.0 * ExamCalculate.pi) + 320 * math.sin(y * ExamCalculate.pi / 30.0)) * 2.0 / 3.0
 
         return ret
 
     @classmethod
     def _transform_lon(self, x, y):
-        ret = 300.0 + x + 2.0 * y + 0.1 * x * x + 0.1 * x * y + 0.1 * math.sqrt(math.abs(x))
+        ret = 300.0 + x + 2.0 * y + 0.1 * x * x + 0.1 * x * y + 0.1 * math.sqrt(math.fabs(x))
         ret += (20.0 * math.sin(6.0 * x * ExamCalculate.pi) + 20.0 * math.sin(2.0 * x * ExamCalculate.pi)) * 2.0 / 3.0
         ret += (20.0 * math.sin(x * ExamCalculate.pi) + 40.0 * math.sin(x / 3.0 * ExamCalculate.pi)) * 2.0 / 3.0
         ret += (150.0 * math.sin(x / 12.0 * ExamCalculate.pi) + 300.0 * math.sin(x / 30.0 * ExamCalculate.pi)) * 2.0 / 3.0
@@ -434,7 +443,7 @@ class ExamCalculate(object):
         return ret
 
     @classmethod
-    def _gps_to_amap(latitude, longitude):
+    def _gps_to_amap(self, latitude, longitude):
         if longitude >= 72.004 and longitude <= 137.8347 and latitude >= 0.8293 and latitude <= 55.8271:
             d_lat = self._transform_lat(longitude - 105.0, latitude - 35.0)
             d_lon = self._transform_lon(longitude - 105.0, latitude - 35.0)
@@ -451,8 +460,61 @@ class ExamCalculate(object):
         return latitude, longitude
 
     @classmethod
-    def _dd2k_to_wgs84(self, x, y):
-        return y, x
+    def _dd2k_to_amap(self, x, y):
+        a = 6378137.0
+        ee = math.sqrt(0.0066943802290)
+        b = math.sqrt(a * a * (1 - ee * ee))
+        c = a * a / b
+        epp = math.sqrt((a * a - b * b) / b / b)
+
+        num = int(str(y)[:2])
+        y = float(str(y)[2:-1]) - 500000
+
+        midlong = (6 * num - 3) * 3.1415926535898 / 180
+
+        b = math.sqrt(a * a * (1 - ee * ee))
+        c = a * a / b
+        epp = math.sqrt(a * a - b * b) / b
+
+        m0 = a * (1 - ee * ee)
+        m2 = 3.0 / 2.0 * m0 * ee * ee
+        m4 = 5.0 / 4.0 * ee * ee * m2
+        m6 = 7.0 / 6.0 * ee * ee * m4
+        m8 = 9.0 / 8.0 * ee * ee * m6
+        a0 = m0 + m2 / 2.0 + 3.0 / 8.0 * m4 + 5.0 / 16.0 * m6 + 35.0 / 128.0 * m8
+        a2 = m2 / 2 + m4 / 2 + 15.0 / 32.0 * m6 + 7.0 / 16.0 * m8
+        a4 = m4 / 8.0 + 3.0 / 16.0 * m6 + 7.0 / 32.0 * m8
+        a6 = m6 / 32.0 + m8 / 16.0
+        a8 = m8 / 128.0
+
+        Bf = x / a0
+        B = 0.0
+
+        while (math.fabs(Bf - B) > 1E-10) :
+            B = Bf
+            sb = math.sin(B)
+            cb = math.cos(B)
+            s2b = sb * cb * 2
+            s4b = s2b * (1 - 2 * sb * sb) * 2
+            s6b = s2b * math.sqrt(1 - s4b * s4b) + s4b * math.sqrt(1 - s2b * s2b)
+            Bf = (x - (-a2 / 2.0 * s2b + a4 / 4.0 * s4b - a6 / 6.0 * s6b)) / a0
+
+        itaf = epp * math.cos(Bf)
+        tf = math.tan(Bf)
+        Vf = math.sqrt(1 + epp * epp * math.cos(Bf) * math.cos(Bf))
+        Nf = c / Vf
+
+        ynf = y / Nf
+
+        latitude = Bf - 1.0 / 2.0 * Vf * Vf * tf * (ynf * ynf - 1.0 / 12.0 * math.pow(ynf, 4) * (5 + 3 * tf * tf +
+                            itaf * itaf - 9 * math.pow(itaf * tf, 2)) +
+                            1.0 / 360.0 * (61 + 90 * tf * tf + 45 * math.pow(tf, 4)) * math.pow(ynf, 6))
+
+        longitude = (ynf / math.cos(Bf) - (1 + 2 * tf * tf + itaf * itaf) * math.pow(ynf, 3) / 6.0 / math.cos(Bf) +
+                              (5 + 28 * tf * tf + 24 * math.pow(tf, 4) + 6 * itaf * itaf + 8 * math.pow(itaf * tf, 2)) *
+                              math.pow(ynf, 5) / 120.0 / math.cos(Bf)) + midlong
+
+        return self._gps_to_amap(latitude * 180 / math.pi, longitude * 180 / math.pi)
 
     @classmethod
     def _time_to_timestamp(self, time_str):
@@ -471,7 +533,7 @@ class ExamCalculate(object):
         for point in json.loads(line_info.get('points')):
             x = float(point.get('x'))
             y = float(point.get('y'))
-            lat, lon = self._dd2k_to_wgs84(x, y)
+            lat, lon = self._dd2k_to_amap(x, y)
             stime = self._time_to_timestamp(point.get('stime'))
             etime = self._time_to_timestamp(point.get('etime'))
             point.update({
@@ -626,6 +688,7 @@ def table_manager(table, ext_name=None, create=True, **kwargs):
 
 # print(ExamCalculate._calculate_distance(39.923423, 116.368904, 39.922501, 116.387271))
 # ExamCalculate.calculate(2)        
+print(ExamCalculate._dd2k_to_amap(4425446.67386214, 20453185.9322068))
 
 def test():
     with CursorManager() as cursor:
