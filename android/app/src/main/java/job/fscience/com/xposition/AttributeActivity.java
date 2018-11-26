@@ -18,6 +18,8 @@ import okhttp3.Response;
 import java.io.IOException;
 
 public class AttributeActivity extends BaseActivity {
+    public static final String ACTIVE_USER_ID = "active_user_id";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -27,7 +29,7 @@ public class AttributeActivity extends BaseActivity {
         final AttributeAdapter adapter = new AttributeAdapter();
         listView.setAdapter(adapter);
 
-        XApplication.getServerInstance().managerGetResult(1, new Callback() {
+        XApplication.getServerInstance().managerGetResult(getIntent().getIntExtra(ACTIVE_USER_ID, -1), new Callback() {
             @Override
             public void onFailure(Call call, IOException e) {
 

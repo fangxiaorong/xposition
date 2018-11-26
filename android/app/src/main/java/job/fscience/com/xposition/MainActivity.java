@@ -231,8 +231,14 @@ public class MainActivity extends BaseActivity implements CompoundButton.OnCheck
         findViewById(R.id.attribute).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(MainActivity.this, AttributeActivity.class);
-                startActivity(intent);
+                if (selectedUserId == -1) {
+                    Intent intent = new Intent(MainActivity.this, UsersActivity.class);
+                    startActivity(intent);
+                } else {
+                    Intent intent = new Intent(MainActivity.this, AttributeActivity.class);
+                    intent.putExtra(AttributeActivity.ACTIVE_USER_ID, selectedUserId);
+                    startActivity(intent);
+                }
             }
         });
         findViewById(R.id.play).setOnClickListener(new View.OnClickListener() {
@@ -332,7 +338,7 @@ public class MainActivity extends BaseActivity implements CompoundButton.OnCheck
                 UserInfoViewHolder holder = new UserInfoViewHolder();
                 holder.userIdTextView =  view.findViewById(R.id.user_id);
                 holder.userNameTextView = view.findViewById(R.id.user_name);
-                holder.userScoreTextView = view.findViewById(R.id.user_score);
+                holder.departNameTextView = view.findViewById(R.id.user_depart);
                 holder.userStateButtom = view.findViewById(R.id.state);
                 holder.userStateButtom.setOnCheckedChangeListener(MainActivity.this);
                 view.setTag(holder);
@@ -344,7 +350,7 @@ public class MainActivity extends BaseActivity implements CompoundButton.OnCheck
             JSONObject object = data.getJSONObject(i);
             viewHolder.userIdTextView.setText(object.getString("id"));
             viewHolder.userNameTextView.setText(object.getString("username"));
-            viewHolder.userScoreTextView.setText(object.getString("score"));
+            viewHolder.departNameTextView.setText(object.getString("departname"));
 
             Boolean visible = markManager.userVisibleMap.get(object.getInteger("id"));
             viewHolder.userStateButtom.setChecked(visible == null || visible);
@@ -357,7 +363,7 @@ public class MainActivity extends BaseActivity implements CompoundButton.OnCheck
     class UserInfoViewHolder {
         public TextView userIdTextView;
         public TextView userNameTextView;
-        public TextView userScoreTextView;
+        public TextView departNameTextView;
         public ToggleButton userStateButtom;
     }
 
@@ -382,18 +388,20 @@ public class MainActivity extends BaseActivity implements CompoundButton.OnCheck
         }
     }
 
+    private int selectedUserId = -1;
     private void selectUser(int userId) {
         unSelectUser(false);
 
         if (markManager.userValidate(userId)) {
             findViewById(R.id.route).setVisibility(View.VISIBLE);
-            findViewById(R.id.attribute).setVisibility(View.VISIBLE);
+//            findViewById(R.id.attribute).setVisibility(View.VISIBLE);
             findViewById(R.id.delete).setVisibility(View.VISIBLE);
             findViewById(R.id.play).setVisibility(View.VISIBLE);
             findViewById(R.id.route).setTag(userId);
             findViewById(R.id.delete).setTag(userId);
 
             startAnimation(userId);
+            selectedUserId = userId;
         } else {
             Toast.makeText(this, "当前员工未定位", Toast.LENGTH_SHORT).show();
         }
@@ -405,13 +413,14 @@ public class MainActivity extends BaseActivity implements CompoundButton.OnCheck
         stopPlay();
 
         findViewById(R.id.route).setVisibility(View.GONE);
-        findViewById(R.id.attribute).setVisibility(View.GONE);
+//        findViewById(R.id.attribute).setVisibility(View.GONE);
         findViewById(R.id.delete).setVisibility(View.GONE);
         findViewById(R.id.play).setVisibility(View.GONE);
         if (clear) {
             ((ListView) findViewById(R.id.user_list)).clearChoices();
             ((ListView) findViewById(R.id.user_list)).invalidateViews();
         }
+        selectedUserId = -1;
     }
 
     SmoothMoveMarker smoothMarker = null;

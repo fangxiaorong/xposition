@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:padding="10dp"
+              android:orientation="vertical"
+              android:background="@drawable/user_info_background"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent">
+    <TextView
+            android:text="张三（001） 北京工厂大学041班 总得分90"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+
+    <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+        <TextView android:id="@+id/order"
+                  android:text="1"
+                  android:layout_width="30sp"
+                  android:layout_height="wrap_content"/>
+        <TextView android:id="@+id/coordinate"
+                  android:text="138.93456,32.765"
+                  android:layout_weight="1"
+                  android:layout_width="10sp"
+                  android:layout_height="wrap_content"/>
+        <TextView android:id="@+id/weight"
+                  android:text="权重：60"
+                  android:layout_width="80sp"
+                  android:layout_height="wrap_content"/>
+        <TextView android:id="@+id/score"
+                  android:text="得分：100"
+                  android:layout_width="80sp"
+                  android:layout_height="wrap_content"/>
+    </LinearLayout>
+</LinearLayout>

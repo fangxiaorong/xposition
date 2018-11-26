@@ -20,6 +20,13 @@ if exam_id:
     table_manager(UserRecord, str(exam_id), True)
 ###
 
+ERR_MSG_MAP = {
+    'DB_1': '成功',
+    'DB_10': '记录重复',
+    'DB_1000': '考试人员不能为空',
+    'DB_1001': '考试已经考试完毕',
+}
+
 def auth_check(method):
     @functools.wraps(method)
     def wrapper(self, *args, **kwargs):
@@ -188,6 +195,21 @@ class ManagerGetUserResult(web.RequestHandler):
         })
         self.write(json.dumps(data))
 
+@app.route(r'/api/manager/user/results')
+class ManagerUserResults(web.RequestHandler):
+    def get(self):
+        level1 = self.get_argument('level1', 0)
+        level2 = self.get_argument('level2', 0)
+        level3 = self.get_argument('level3', 0)
+        level4 = self.get_argument('level4', 0)
+
+        data = ExamCalculate.calculate_all(level1, level2, level3, level4)
+        data.update({
+            'state': 1,
+            'message': '成功',
+        })
+        self.write(json.dumps(data))
+
 # Web后台管理接口
 
 @app.route(r'/api/admin/login')
@@ -276,34 +298,27 @@ class AdminExam(BaseHandler):
     def post(self):
         exam_id = self.get_argument('exam_id', None)
         exam_name = self.get_argument('name', None)
-        state = self.get_argument('state', False)
+        score1 = self.get_argument('score1', 0)
+        score2 = self.get_argument('score2', 0)
+        score3 = self.get_argument('score3', 0)
+        score4 = self.get_argument('score4', 0)
 
         with CursorManager() as cursor:
             exam = table_manager(Exam)
+
+            result = -1
             if exam_id is not None:
-                if exam.update_active(cursor, exam_id):
-                    self.write(json.dumps({
-                        'state': 1,
-                        'message': '成功',
-                    }))
+                if score1 == 0:
+                    result = exam.update_active(cursor, exam_id)
                 else:
-                    self.write(json.dumps({
-                        'state': 2,
-                        'message': '失败',
-                    }))
+                    result = exam.update_record(cursor, exam_id, score1=score1, score2=score2, score3=score3, score4=score4)
             else:
-                exam_id = exam.new_record(cursor, exam_name)
-                if exam_id:
-                    self.write(json.dumps({
-                        'state': 1,
-                        'message': '成功',
-                        'exam_id': exam_id,
-                    }))
-                else:
-                    self.write(json.dumps({
-                        'state': 2,
-                        'message': '失败',
-                    }))
+                result = exam.new_record(cursor, exam_name, score1=score1, score2=score2, score3=score3, score4=score4)
+
+            self.write(json.dumps({
+                'state': result,
+                'message': ERR_MSG_MAP.get('DB_' + str(result)) or '失败'
+            }))
 
 @app.route(r'/api/admin/exams')
 class AdminGetExams(BaseHandler):
@@ -347,13 +362,23 @@ class AdminGetExamUser(BaseHandler):
     @auth_check
     def post(self, exam_id):
         exam_users = self.get_argument('exam_users', None)
+
         if exam_users and exam_id:
             exam_users = json.loads(exam_users)
             with CursorManager() as cursor:
                 exam_user = table_manager(ExamUser)
                 exam_user.delete_record(cursor, exam_id=exam_id)
                 exam_user.import_records(cursor, exam_users)
-        self.write('')
+
+            self.write(json.dumps({
+                'state': 1,
+                'message': '成功',
+            }))
+        else:
+            self.write(json.dumps({
+                'state': 10,
+                'message': '失败'
+            }))
 
 @app.route(r'/api/admin/examline/list')
 class AdminGetExamLines(BaseHandler):
@@ -421,16 +446,10 @@ class AdminExamLine(BaseHandler):
             else:
                 result = exam_line.new_record(cursor, name=name)
             
-            if result:
-                self.write(json.dumps({
-                    'state': 1,
-                    'message': '成功'
-                }))
-            else:
-                self.write(json.dumps({
-                    'state': 2,
-                    'message': '创建失败'
-                }))
+            self.write(json.dumps({
+                'state': result,
+                'message': ERR_MSG_MAP.get('DB_' + str(result)) or '创建失败'
+            }))
 
 # 初始化数据库
 

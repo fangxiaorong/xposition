@@ -17,7 +17,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"/>
     <TextView
-            android:text="用户得分"
+            android:text="用户单位"
             android:textSize="24sp"
             android:background="#FEFEFE"
             android:layout_weight="1"

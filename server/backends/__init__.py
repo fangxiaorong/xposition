@@ -11,8 +11,13 @@ import sqlite3
 import redis
 
 
-conn = sqlite3.connect('server/db/demo.db')
+conn = sqlite3.connect('server/db/main.db')
 r_conn = redis.Redis()
+
+sql_result_map = {
+    'SUCCESS': 1,
+    'UNIQUE constraint failed': 10,
+}
 
 class Session(object):
     def __init__(self):
@@ -56,7 +61,7 @@ def init_db():
         conn.execute('''
             CREATE TABLE exam (
                 id INTEGER PRIMARY KEY,
-                name VARCHAR(40),
+                name VARCHAR(40) UNIQUE,
                 username VARCHAR(20),
                 level1 DOUBLE,
                 level2 DOUBLE,
@@ -91,7 +96,7 @@ def init_db():
         conn.execute('''
             CREATE TABLE exam_line (
                 id INTEGER PRIMARY KEY,
-                name VARCHAR(20),
+                name VARCHAR(20) UNIQUE,
                 points TEXT,
                 valid INTEGER,
                 create_time TIMESTAMP
@@ -101,7 +106,7 @@ def init_db():
         conn.execute('''
             CREATE TABLE user (
                 id INTEGER PRIMARY KEY,
-                username VARCHAR(20),
+                username VARCHAR(20) UNIQUE,
                 nickname VARCHAR(20),
                 password VARCHAR(40),
                 valid INTEGER,
@@ -135,6 +140,7 @@ class BaseTable(object):
         else:
             val = ['1=1']
 
+        result = sql_result_map.get('SUCCESS')
         try:
             sql_str = '''
                 SELECT %s FROM %s WHERE %s
@@ -142,80 +148,93 @@ class BaseTable(object):
             cursor.execute(sql_str)
             return cursor.fetchall()
         except Exception as e:
-            raise e
-        return None
+            result = sql_result_map.get(e.args[0].split(':')[0])
+            if not result:
+                result = (100, '失败')
+        return result
 
     def _new_record(self, cursor, **kwargs):
         sql_str = '''
             INSERT INTO %s (%s) values (%s);
         ''' % (self._table, ', '.join(kwargs.keys()), ('?, ' * len(kwargs))[:-2])
 
-        record_id = None
+        result = sql_result_map.get('SUCCESS')
         try:
             cursor.execute(sql_str, tuple(kwargs.values()))
             record_id = cursor.lastrowid
             cursor.connection.commit()
         except Exception as e:
-            print(e)
-        return record_id
+            result = sql_result_map.get(e.args[0].split(':')[0])
+            if not result:
+                result = (100, '失败')
+        return result
 
     def _new_records(self, cursor, fields, records):
         sql_str = '''
             INSERT INTO %s (%s) values (%s);
         ''' % (self._table, ', '.join(fields), ('?, ' * len(fields))[:-2])
 
+        result = sql_result_map.get('SUCCESS')
         try:
             cursor.executemany(sql_str, records)
             cursor.connection.commit()
         except Exception as e:
-            print(e)
-            return False
-        return True
+            result = sql_result_map.get(e.args[0].split(':')[0])
+            if not result:
+                result = (100, '失败')
+        return result
 
     def _update_record(self, cursor, record_id, **kwargs):
         sql_str = '''
             UPDATE %s SET %s WHERE id=?
         ''' % (self._table, '=?,'.join(kwargs.keys()) + '=?')
 
+        result = sql_result_map.get('SUCCESS')
         try:
             values = [v for v in kwargs.values()]
             values.append(record_id)
             cursor.execute(sql_str, tuple(values))
             cursor.connection.commit()
-            return True
         except Exception as e:
-            print(e)
-        return False
+            result = sql_result_map.get(e.args[0].split(':')[0])
+            if not result:
+                result = (100, '失败')
+        return result
 
     def _delete_record(self, cursor, **kwargs):
         sql_str = '''
             DELETE FROM %s WHERE %s
         ''' % (self._table, '=? and '.join(kwargs.keys()) + '=?')
+
+        result = sql_result_map.get('SUCCESS')
         try:
             return cursor.execute(sql_str, tuple(kwargs.values()))
         except Exception as e:
-            print(e)
-        return False
+            result = sql_result_map.get(e.args[0].split(':')[0])
+            if not result:
+                result = (100, '失败')
+        return result
 
 class Exam(BaseTable):
     def __init__(self):
         super(Exam, self).__init__('exam')
         self._exam_active_id = 'exam_active_id'
 
-    def new_record(self, cursor, name):
-        return self._new_record(cursor, name=name, state=1, create_time=datetime.now().isoformat())
+    def new_record(self, cursor, name, **kwargs):
+        return self._new_record(cursor, name=name, state=1, create_time=datetime.now().isoformat(), **kwargs)
 
     def query_records(self, cursor, **kwargs):
-        result = self._query_record(cursor, ('id', 'name', 'state', 'create_time'), **kwargs)
+        result = self._query_record(cursor, ('id', 'name', 'level1', 'level2', 'level3', 'level4', 'score1', 'score2', 'score3', 'score4', 'state', 'create_time'), **kwargs)
         if result:
             active_item_id = r_conn.hget(self._exam_active_id, '-1') or b'-1'
             active_item_id = int(active_item_id)
+            print(active_item_id)
         else:
             active_item_id = -1
         return (result, active_item_id)
 
     def query_record(self, cursor, **kwargs):
-        result = self._query_record(cursor, ('id', 'name', 'state', 'create_time'), **kwargs)
+        result = self._query_record(cursor, ('id', 'name', 'level1', 'level2', 'level3', 'level4', 'score1', 'score2', 'score3', 'score4', 'state', 'create_time'), **kwargs)
         if result:
             active_item_id = r_conn.hget(self._exam_active_id, '-1') or b'-1'
             active_item_id = int(active_item_id)
@@ -223,16 +242,27 @@ class Exam(BaseTable):
         else:
             return (None, -1)
 
-    def update_active(self, cursor, exam_id):
+    def update_record(self, cursor, exam_id, **kwargs):
+        result = self._update_record(cursor, exam_id, **kwargs)
+        return result
+
+    def update_active(self, cursor, exam_id, **kwargs):
+        result = -1
+
         if not r_conn.hexists(self._exam_active_id, str(exam_id)):
-            self._update_record(cursor, exam_id, state=2)
-            r_conn.hmset(self._exam_active_id, {str(exam_id): 1, '-1': exam_id})
-
             exam_user = table_manager(ExamUser)
-            exam_user.update_active(cursor, exam_id)
+            if len(exam_user.query_records(cursor, exam_id=exam_id)) > 0:
+                self._update_record(cursor, exam_id, state=2, **kwargs)
+                r_conn.hmset(self._exam_active_id, {str(exam_id): 1, '-1': exam_id})
 
-            return True
-        return None
+                exam_user.update_active(cursor, exam_id)
+
+                result = 1
+            else:
+                result = 1000
+        else:
+            result = 1001
+        return result
 
     def get_active_id(self):
         active_id = r_conn.hget(self._exam_active_id, '-1')
@@ -245,14 +275,14 @@ class ExamUser(BaseTable):
     def import_records(self, cursor, users):
         time_now = datetime.now().isoformat()
 
-        users = [(user.get('exam_id'), user.get('line_id'), user.get('device_id'), user.get('username'), time_now) for user in users]
-        self._new_records(cursor, ['exam_id', 'line_id', 'device_id', 'username', 'create_time'], users)
+        users = [(user.get('exam_id'), user.get('line_id'), user.get('device_id'), user.get('username'), user.get('departname'), time_now) for user in users]
+        return self._new_records(cursor, ['exam_id', 'line_id', 'device_id', 'username', 'departname', 'create_time'], users)
 
     def update_record(self, cursor, record_id, **kwargs):
         self._update_record(cursor, record_id, **kwargs)
 
     def query_records(self, cursor, **kwargs):
-        exam_users = self._query_record(cursor, ('id', 'exam_id', 'line_id', 'device_id', 'username', 'score'), **kwargs)
+        exam_users = self._query_record(cursor, ('id', 'exam_id', 'line_id', 'device_id', 'username', 'departname', 'score'), **kwargs)
         if exam_users:
             line_dict = {}
             try:
@@ -292,6 +322,7 @@ class ExamUser(BaseTable):
         info_map = {} # {'exam_id': exam_id}
         for user_info in exam_user_infos:
             info_map.update({user_info.get('id'): json.dumps({'username': user_info.get('username')})})
+        print(info_map)
         r_conn.hmset(user_record.active_user_info_key, info_map)
 
     def query_locations(self):
@@ -554,19 +585,17 @@ class ExamCalculate(object):
         return line_data
 
     @classmethod
-    def _prepare_data(self, user_id):
+    def _prepare_data(self, user_id, active_id):
         line_info = None
         position_info = None
 
-        active_id = table_manager(Exam).get_active_id()
-        if active_id > 0:
-            with CursorManager() as cursor:
-                user_info = table_manager(ExamUser).query_records(cursor, id=user_id, exam_id=active_id)
-                if user_info:
-                    user_info = user_info[0]
-                    line_info = table_manager(ExamLine).query_record(cursor, id=user_info.get('line_id'))
-                    if line_info:
-                        position_info = table_manager(UserRecord, str(active_id)).query_records(user_id, manual=1)
+        with CursorManager() as cursor:
+            user_info = table_manager(ExamUser).query_records(cursor, id=user_id, exam_id=active_id)
+            if user_info:
+                user_info = user_info[0]
+                line_info = table_manager(ExamLine).query_record(cursor, id=user_info.get('line_id'))
+                if line_info:
+                    position_info = table_manager(UserRecord, str(active_id)).query_records(user_id, manual=1)
 
         return self._conver_line_info(line_info), position_info
 
@@ -609,7 +638,11 @@ class ExamCalculate(object):
 
     @classmethod
     def calculate(self, user_id):
-        line_info, records = self._prepare_data(user_id)
+        active_id = table_manager(Exam).get_active_id()
+        if active_id <= 0:
+            return {}
+
+        line_info, records = self._prepare_data(user_id, active_id)
 
         for record in records:
             self._dispatch_nearest_point(line_info.get('points'), record)
@@ -673,6 +706,102 @@ class ExamCalculate(object):
         
         return result
 
+    @classmethod
+    def calculate_all(self, level1, level2, level3, level4):
+        result = {}
+
+        active_id = table_manager(Exam).get_active_id()
+        if active_id <= 0:
+            return result
+
+        
+        with CursorManager() as cursor:
+            exam_info = table_manager(Exam).query_record(cursor, id=active_id)
+            if not exam_info:
+                return result
+
+            # level1, level2, level3, level4, score1, score2, score3, score4 = (
+            #     float(exam_info.get('level1')), float(exam_info.get('level2')),
+            #     float(exam_info.get('level3')), float(exam_info.get('level4')), 
+            #     float(exam_info.get('score1')), float(exam_info.get('score2')),
+            #     float(exam_info.get('score3')), float(exam_info.get('score4')), 
+            # )
+            score1, score2, score3, score4 = (
+                float(exam_info.get('score1')), float(exam_info.get('score2')),
+                float(exam_info.get('score3')), float(exam_info.get('score4')),
+            )
+            result = {'level1': level1, 'level2': level2, 'level3': level3, 'level4': level4}
+            users = []
+
+            user_info_list = table_manager(ExamUser).query_records(cursor, exam_id=active_id)
+            for user_info in user_info_list:
+                line_id = user_info.get('line_id')
+
+                line_info = table_manager(ExamLine).query_record(cursor, id=line_id)
+                
+                if not line_info:
+                    continue
+
+                line_info = self._conver_line_info(line_info)
+                records = table_manager(UserRecord, str(active_id)).query_records(user_id, manual=1)
+
+                # >>>>>>>>
+                for record in records:
+                    self._dispatch_nearest_point(line_info.get('points'), record)
+
+                user_result = {'line_name': line_info.get('line_name')}
+
+                points = []
+                total_score = 0
+                for index, point in enumerate(line_info.get('points')):
+                    suite_location = None
+                    min_distance = 1000000
+                    stime = point.get('stime')
+                    etime = point.get('etime')
+                    for location in point.get('locations'):
+                        record_time = location.get('create_time') % 86400
+                        if location.get('distance') < min_distance and ((stime >= 0 and record_time >= stime and record_time <= etime) or stime <= 0):
+                            suite_location = location
+                            min_distance = location.get('distance')
+
+                    w = float(point.get('weight'))
+                    if suite_location:    
+                        score = 0
+                        if min_distance <= level1:
+                            score = score1
+                        elif min_distance <= level2:
+                            score = score2
+                        elif min_distance <= level3:
+                            score = score3
+                        elif min_distance <= level4:
+                            score = score4
+
+                        data = {
+                            'id': index + 1,
+                            'latitude': suite_location.get('latitude'),
+                            'longitude': suite_location.get('longitude'),
+                            'weight': w,
+                            'distance': min_distance,
+                            'score': score
+                        }
+                        total_score += (score * w)
+                    else:
+                        data = {
+                            'id': index + 1,
+                            'latitude': -1,
+                            'longitude': -1,
+                            'weight': w,
+                            'distance': -1,
+                            'score': 0
+                        }
+                    points.append(data)
+
+                user_result.update({'points': points, 'total_score': total_score})
+                users.append(user_result)
+            result.update({'users': users})
+
+        return result
+
 
 _table_map = dict()
 def table_manager(table, ext_name=None, create=True, **kwargs):
@@ -688,7 +817,7 @@ def table_manager(table, ext_name=None, create=True, **kwargs):
 
 # print(ExamCalculate._calculate_distance(39.923423, 116.368904, 39.922501, 116.387271))
 # ExamCalculate.calculate(2)        
-print(ExamCalculate._dd2k_to_amap(4425446.67386214, 20453185.9322068))
+# print(ExamCalculate._dd2k_to_amap(4425446.67386214, 20453185.9322068))
 
 def test():
     with CursorManager() as cursor:

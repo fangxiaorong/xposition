@@ -7,14 +7,21 @@
             <v-list>
               <v-list-tile v-for="item in exams" :key="item.id" @click="pathSelected(item)">
                 <v-list-tile-action>
-                  <v-btn color="primary" fab small dark outline @click.prevent="examActive(item)">
-                    <v-icon>{{ item.id === active_exam_id ? 'favorite' : 'favorite_border' }}</v-icon>
+                  <v-btn icon ripple @click.stop="examActive(item)">
+                    <v-icon color="primary">{{ item.id === active_exam_id ? 'lock' : (item.state === 2 ? 'history' : 'lock_open') }}</v-icon>
                   </v-btn>
                 </v-list-tile-action>
 
                 <v-list-tile-content>
                   <v-list-tile-title v-text="item.name"></v-list-tile-title>
                 </v-list-tile-content>
+
+                <v-list-tile-avatar v-if="item.state === 1">
+                  <v-btn icon ripple @click.stop="editExam(item)">
+                    <v-icon color="grey lighten-1">edit</v-icon>
+                  </v-btn>
+                </v-list-tile-avatar>
+
               </v-list-tile>
               <v-dialog v-model="dialog" max-width="800px">
                 <v-btn slot="activator" color="primary" dark class="mb-2">新增</v-btn>
@@ -23,7 +30,26 @@
                     <span class="headline">新建考试</span>
                   </v-card-title>
                   <v-card-text>
-                    <v-text-field v-model="examname" label="考试名称"></v-text-field>
+                    <v-container grid-list-md>
+                      <v-layout wrap>
+                        <!-- <v-text-field v-model="examname" label="考试名称"></v-text-field> -->
+                        <v-flex xs12 sm12 md12>
+                          <v-text-field v-model="editedItem.name" label="考试名称" :readonly="editedItem.id>=0"></v-text-field>
+                        </v-flex>
+                        <v-flex xs12 sm6 md3>
+                          <v-text-field v-model="editedItem.score1" label="优秀"></v-text-field>
+                        </v-flex>
+                        <v-flex xs12 sm6 md3>
+                          <v-text-field v-model="editedItem.score2" label="良好"></v-text-field>
+                        </v-flex>
+                        <v-flex xs12 sm6 md3>
+                          <v-text-field v-model="editedItem.score3" label="及格"></v-text-field>
+                        </v-flex>
+                        <v-flex xs12 sm6 md3>
+                          <v-text-field v-model="editedItem.score4" label="得分"></v-text-field>
+                        </v-flex>
+                      </v-layout>
+                    </v-container>
                   </v-card-text>
                   <v-card-actions>
                     <v-spacer></v-spacer>
@@ -38,7 +64,8 @@
         </v-flex>
         <v-flex lg9 v-if="selected">
           <v-toolbar flat color="white">
-            <v-toolbar-title>{{ selected.name }}</v-toolbar-title>
+            <!-- <v-toolbar-title>{{ selected.name + '(&#60;=' + selected.level1 + '优秀 &#60;=' + selected.level2 + '良好 &#60;=' + selected.level3 + '及格 &#60;=' + selected.level4 + '得分)'}}</v-toolbar-title> -->
+            <v-toolbar-title>{{ selected.name + ' -- [ 优秀(' + selected.score1 + ') 良好(' + selected.score2 + ') 及格(' + selected.score3 + ') 得分(' + selected.score4 + ') ]'}}</v-toolbar-title>
             <v-divider class="mx-2" inset vertical></v-divider>
             <v-spacer></v-spacer>
             <input type="file" name="importuser" @change="handleFileChange" v-show="selected.state === 1">
@@ -52,6 +79,7 @@
               <td v-else>{{ props.item.line ? props.item.line.name : props.item.line_id }}</td>
               <td>{{ props.item.username }}</td>
               <td>{{ props.item.device_id }}</td>
+              <td>{{ props.item.departname }}</td>
               <td>
               </td>
             </template>
@@ -75,29 +103,31 @@ export default {
     exams: [],
     active_exam_id: -1,
     lines: [],
-    examname: '',
     dialog: false,
     headers: [
       { text: '考试号', value: 'name', sortable: false, align: 'left' },
       { text: '路线号', value: 'calories', sortable: false },
       { text: '姓名', value: 'fat', sortable: false },
       { text: '设备号', value: 'carbs', sortable: false },
+      { text: '所属单位', value: 'carbs', sortable: false },
     ],
     desserts: [],
     editedIndex: -1,
     editedItem: {
+      id: -1,
       name: '',
-      calories: 0,
-      fat: 0,
-      carbs: 0,
-      protein: 0
+      score1: 0,
+      score2: 0,
+      score3: 0,
+      score4: 0
     },
     defaultItem: {
+      id: -1,
       name: '',
-      calories: 0,
-      fat: 0,
-      carbs: 0,
-      protein: 0
+      score1: 0,
+      score2: 0,
+      score3: 0,
+      score4: 0
     }
   }),
   computed: {
@@ -134,18 +164,6 @@ export default {
         }
       }));
     },
-
-    editItem (item) {
-      this.editedIndex = this.desserts.indexOf(item);
-      this.editedItem = Object.assign({}, item);
-      this.dialog = true;
-    },
-
-    deleteItem (item) {
-      const index = this.desserts.indexOf(item);
-      confirm('Are you sure you want to delete this item?') && this.desserts.splice(index, 1);
-    },
-
     close () {
       this.dialog = false;
       setTimeout(() => {
@@ -153,23 +171,38 @@ export default {
         this.editedIndex = -1;
       }, 300);
     },
-
     newExam () {
-      if (this.examname.trim() === '') {
+      if (this.editedItem.name.trim() === '') {
         alert('名字不能为空！');
       } else {
+        let data = 'name=' + encodeURI(this.editedItem.name.trim()) +
+                   '&score1=' + this.editedItem.score1 +
+                   '&score2=' + this.editedItem.score2 + 
+                   '&score3=' + this.editedItem.score3 +
+                   '&score4=' + this.editedItem.score4;
         if (this.editedIndex > -1) {
-          Object.assign(this.desserts[this.editedIndex], this.editedItem);
-        } else {
-          // this.desserts.push(this.editedItem);
-          this.axios.post('/api/admin/exam', 'name=' + this.examname.trim()).then((response) => {
+          // Object.assign(this.desserts[this.editedIndex], this.editedItem);
+          data = data + '&exam_id=' + this.editedItem.id;
+          this.axios.post('/api/admin/exam', data).then((response) => {
             console.log(response);
             if (response.data.state === 1) {
               this.initialize();
+              this.close();
+            } else {
+              window.alert(response.data.message);
+            }
+          });
+        } else {
+          this.axios.post('/api/admin/exam', data).then((response) => {
+            console.log(response);
+            if (response.data.state === 1) {
+              this.initialize();
+              this.close();
+            } else {
+              window.alert(response.data.message);
             }
           });
         }
-        this.close();
       }
     },
     examActive (item) {
@@ -183,6 +216,11 @@ export default {
         }
       });
     },
+    editExam (item) {
+      this.editedIndex = this.exams.indexOf(item);
+      this.editedItem = Object.assign({}, item);
+      this.dialog = true;
+    },
     handleFileChange (event) {
       if (typeof (FileReader) !== 'undefined') {
         let that = this;
@@ -194,12 +232,13 @@ export default {
           console.log(that.selected);
           data.forEach(item => {
             let tmp = item.split(',');
-            if (tmp.length >= 2 && tmp[0].trim() !== '' && tmp[1].trim() !== '') {
+            if (tmp.length >= 3 && tmp[0].trim() !== '' && tmp[1].trim() !== '' && tmp[2].trim() !== '') {
               result.push({
                 exam_id: that.selected.id,
                 line_id: that.lines[Math.floor(Math.random() * that.lines.length)].id,
                 username: tmp[0],
                 device_id: tmp[1],
+                departname: tmp[2],
               });
             }
             that.desserts = result;
@@ -227,7 +266,11 @@ export default {
     },
     saveExamUser () {
       this.axios.post('/api/admin/examuser/list/' + this.selected.id, 'exam_users=' + encodeURI(JSON.stringify(this.desserts))).then((response) => {
-        console.log(response);
+        if (response.data.state === 1) {
+          window.alert('保存成功');
+        } else {
+          window.alert(response.data.message);
+        }
       });
     }
   }

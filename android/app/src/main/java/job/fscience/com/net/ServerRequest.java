@@ -90,6 +90,12 @@ public class ServerRequest {
         client.newCall(request).enqueue(callback);
     }
 
+    public void managerGetResults(double level1, double level2, double level3, double level4, Callback callback) {
+        String params = String.format("level1=%f&level2=%f&level3=%f&level4=%f", level1, level2, level3, level4);
+        Request request = new Request.Builder().url(baseUrl + "/api/manager/user/results?" + params).build();
+        client.newCall(request).enqueue(callback);
+    }
+
 
     public static JSONObject parseJSON(Response response) {
         try {

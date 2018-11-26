@@ -51,6 +51,7 @@
         </activity>
         <activity android:name=".MainActivity" android:screenOrientation="portrait" />
         <activity android:name=".AttributeActivity" android:screenOrientation="portrait" />
+        <activity android:name=".UsersActivity" android:screenOrientation="portrait" />
 
         <service android:name="com.amap.api.location.APSService"></service>
     </application>

@@ -52,19 +52,13 @@
                   <v-container grid-list-md>
                     <v-layout wrap>
                       <v-flex xs12 sm6 md4>
-                        <v-text-field v-model="editedItem.level1" label="高"></v-text-field>
+                        <v-text-field v-model="editedItem.x" label="X坐标"></v-text-field>
                       </v-flex>
                       <v-flex xs12 sm6 md4>
-                        <v-text-field v-model="editedItem.level2" label="中"></v-text-field>
+                        <v-text-field v-model="editedItem.y" label="Y坐标"></v-text-field>
                       </v-flex>
                       <v-flex xs12 sm6 md4>
-                        <v-text-field v-model="editedItem.level3" label="低"></v-text-field>
-                      </v-flex>
-                      <v-flex xs12 sm6 md6>
-                        <v-text-field v-model="editedItem.x" label="X"></v-text-field>
-                      </v-flex>
-                      <v-flex xs12 sm6 md6>
-                        <v-text-field v-model="editedItem.y" label="Y"></v-text-field>
+                        <v-text-field v-model="editedItem.maxdistance" label="最大距离"></v-text-field>
                       </v-flex>
                       <v-flex xs2 sm1 md1>
                         <v-checkbox v-model="editedItem.senable"></v-checkbox>
@@ -95,9 +89,8 @@
               <!-- <td>{{ props.item.order }}</td> -->
               <td>{{ props.item.x }}</td>
               <td>{{ props.item.y }}</td>
-              <td>{{ props.item.level1 }}</td>
-              <td>{{ props.item.level2 }}</td>
-              <td>{{ props.item.level3 }}</td>
+              <td>{{ props.item.maxdistance }}</td>
+              <td>{{ props.item.weight }}</td>
               <td>{{ props.item.stime }}</td>
               <td>{{ props.item.etime }}</td>
               <td>
@@ -134,9 +127,8 @@ export default {
       // { text: '序号', value: 'name', sortable: false, align: 'left' },
       { text: 'X', value: 'calories', sortable: false },
       { text: 'Y', value: 'fat', sortable: false },
-      { text: '高', value: 'calories', sortable: false },
-      { text: '中', value: 'calories', sortable: false },
-      { text: '低', value: 'calories', sortable: false },
+      { text: '最大距离', value: 'calories', sortable: false },
+      { text: '权重', value: 'calories', sortable: false },
       { text: '开始时间', value: 'carbs', sortable: false },
       { text: '结束时间', value: 'carbs', sortable: false },
       { text: '动作', value: 'name', sortable: false }
@@ -145,9 +137,8 @@ export default {
     editedItem: {
       x: '',
       y: '',
-      level1: '',
-      level2: '',
-      level3: '',
+      maxdistance: '',
+      weight: 0,
       stime: '',
       etime: '',
       senable: false,
@@ -156,9 +147,8 @@ export default {
     defaultItem: {
       x: '',
       y: '',
-      level1: '',
-      level2: '',
-      level3: '',
+      maxdistance: '',
+      weight: 0,
       stime: '',
       etime: '',
       senable: false,
@@ -210,6 +200,13 @@ export default {
     },
 
     save () {
+      if (isNaN(parseFloat(this.editedItem.x)) || isNaN(parseFloat(this.editedItem.y)) || isNaN(parseFloat(this.editedItem.maxdistance))) {
+        return alert('X，Y，最大距离必须是数字');
+      }
+      if (parseFloat(this.editedItem.maxdistance) <= 0) {
+        return alert('最大距离必须大于0');
+      }
+
       if (this.editedIndex > -1) {
         Object.assign(this.selected.points[this.editedIndex], this.editedItem);
       } else {
@@ -246,7 +243,7 @@ export default {
       this.editedItem = this.defaultItem;
 
       if (this.pathname.trim() !== '') {
-        this.axios.post('/api/admin/examline', 'name=' + this.pathname.trim()).then((response) => {
+        this.axios.post('/api/admin/examline', 'name=' + encodeURI(this.pathname.trim())).then((response) => {
           if (response.data.state === 1) {
             this.initialize();
           } else {
@@ -259,7 +256,11 @@ export default {
     },
     saveExamLine () {
       this.axios.post('/api/admin/examline', 'lineid=' + this.selected.id + '&points=' + JSON.stringify(this.selected.points)).then((response) => {
-        console.log(response);
+        if (response.data.state === 1) {
+          window.alert('路径保存成功');
+        } else {
+          window.alert(response.data.message);
+        }
       });
     }
   }
