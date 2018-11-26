@@ -140,7 +140,6 @@ class BaseTable(object):
         else:
             val = ['1=1']
 
-        result = sql_result_map.get('SUCCESS')
         try:
             sql_str = '''
                 SELECT %s FROM %s WHERE %s
@@ -148,10 +147,11 @@ class BaseTable(object):
             cursor.execute(sql_str)
             return cursor.fetchall()
         except Exception as e:
-            result = sql_result_map.get(e.args[0].split(':')[0])
-            if not result:
-                result = (100, '失败')
-        return result
+            # result = sql_result_map.get(e.args[0].split(':')[0])
+            # if not result:
+            #     result = (100, '失败')
+            print(e)
+        return None
 
     def _new_record(self, cursor, **kwargs):
         sql_str = '''
