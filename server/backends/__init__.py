@@ -716,7 +716,7 @@ class ExamCalculate(object):
 
         
         with CursorManager() as cursor:
-            exam_info = table_manager(Exam).query_record(cursor, id=active_id)
+            exam_info, _ = table_manager(Exam).query_record(cursor, id=active_id)
             if not exam_info:
                 return result
 
@@ -749,7 +749,7 @@ class ExamCalculate(object):
                 for record in records:
                     self._dispatch_nearest_point(line_info.get('points'), record)
 
-                user_result = {'line_name': line_info.get('line_name')}
+                user_result = {'name': line_info.get('name')}
 
                 points = []
                 total_score = 0
@@ -799,7 +799,7 @@ class ExamCalculate(object):
                 user_result.update({'points': points, 'total_score': total_score})
                 users.append(user_result)
             result.update({'users': users})
-
+        print(result)
         return result
 
 
