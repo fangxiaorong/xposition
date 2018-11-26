@@ -51,14 +51,17 @@
                 <v-card-text>
                   <v-container grid-list-md>
                     <v-layout wrap>
-                      <v-flex xs12 sm6 md4>
+                      <v-flex xs12 sm6 md3>
                         <v-text-field v-model="editedItem.x" label="X坐标"></v-text-field>
                       </v-flex>
-                      <v-flex xs12 sm6 md4>
+                      <v-flex xs12 sm6 md3>
                         <v-text-field v-model="editedItem.y" label="Y坐标"></v-text-field>
                       </v-flex>
-                      <v-flex xs12 sm6 md4>
+                      <v-flex xs12 sm6 md3>
                         <v-text-field v-model="editedItem.maxdistance" label="最大距离"></v-text-field>
+                      </v-flex>
+                      <v-flex xs12 sm6 md3>
+                        <v-text-field v-model="editedItem.weight" label="权重"></v-text-field>
                       </v-flex>
                       <v-flex xs2 sm1 md1>
                         <v-checkbox v-model="editedItem.senable"></v-checkbox>

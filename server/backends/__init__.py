@@ -743,7 +743,7 @@ class ExamCalculate(object):
                     continue
 
                 line_info = self._conver_line_info(line_info)
-                records = table_manager(UserRecord, str(active_id)).query_records(user_id, manual=1)
+                records = table_manager(UserRecord, str(active_id)).query_records(user_info.get('user_id'), manual=1)
 
                 # >>>>>>>>
                 for record in records:
