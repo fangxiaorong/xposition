@@ -134,7 +134,7 @@ class BaseTable(object):
         super(BaseTable, self).__init__()
         self._table = table
 
-    def _query_record(self, cursor, fields, **kwargs):
+    def _query_record(self, cursor, fields, orderby='', **kwargs):
         if kwargs:
             val = [(kv[0] + '="' + str(kv[1]) + '"') for kv in kwargs.items()]
         else:
@@ -142,8 +142,8 @@ class BaseTable(object):
 
         try:
             sql_str = '''
-                SELECT %s FROM %s WHERE %s
-            ''' % (', '.join(fields), self._table, ' and '.join(val))
+                SELECT %s FROM %s WHERE %s %s
+            ''' % (', '.join(fields), self._table, ' and '.join(val), orderby)
             cursor.execute(sql_str)
             return cursor.fetchall()
         except Exception as e:
@@ -442,7 +442,7 @@ class UserRecord(BaseTable):
 
                 try:
                     sql_str = '''
-                        SELECT id, latitude, longitude, create_time FROM %s WHERE %s
+                        SELECT id, latitude, longitude, create_time FROM %s WHERE %s order by create_time asc
                     ''' % (self._table, ' and '.join(val))
                     cursor.execute(sql_str)
                     result = cursor.fetchall()
@@ -558,7 +558,7 @@ class ExamCalculate(object):
 
     @classmethod
     def _conver_line_info(self, line_info):
-        line_data = {'line_name': line_info.get('line_name')}
+        line_data = {'name': line_info.get('name')}
 
         points = []
         for point in json.loads(line_info.get('points')):
@@ -743,7 +743,7 @@ class ExamCalculate(object):
                     continue
 
                 line_info = self._conver_line_info(line_info)
-                records = table_manager(UserRecord, str(active_id)).query_records(user_info.get('user_id'), manual=1)
+                records = table_manager(UserRecord, str(active_id)).query_records(user_info.get('id'), manual=1)
 
                 # >>>>>>>>
                 for record in records:

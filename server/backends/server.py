@@ -203,7 +203,7 @@ class ManagerUserResults(web.RequestHandler):
         level3 = self.get_argument('level3', 0)
         level4 = self.get_argument('level4', 0)
 
-        data = ExamCalculate.calculate_all(level1, level2, level3, level4)
+        data = ExamCalculate.calculate_all(float(level1), float(level2), float(level3), float(level4))
         data.update({
             'state': 1,
             'message': '成功',

@@ -8,6 +8,7 @@ import android.widget.BaseAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import job.fscience.com.lib.AuthCallback;
 import job.fscience.com.lib.BaseActivity;
@@ -16,13 +17,14 @@ import okhttp3.Call;
 import java.io.IOException;
 
 public class UsersActivity extends BaseActivity {
+    UsersAdapter adapter = null;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_users);
 
         ListView userListView = (ListView)findViewById(R.id.user_list);
-        UsersAdapter adapter = new UsersAdapter();
+        adapter = new UsersAdapter();
         userListView.setAdapter(adapter);
 
         findViewById(R.id.calculate).setOnClickListener(new View.OnClickListener() {
@@ -67,10 +69,16 @@ public class UsersActivity extends BaseActivity {
             }
 
             @Override
-            public void onResponseEx(JSONObject data) throws IOException {
+            public void onResponseEx(final JSONObject data) throws IOException {
                 if (data == null) {
                     showTextOnUIThread("服务器问题");
                 } else if (data.getInteger("state") == 1) {
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            adapter.updateUsers(data.getJSONArray("users"));
+                        }
+                    });
                     System.out.println(data);
                 } else {
                     showTextOnUIThread(data.getString("message"));
@@ -80,9 +88,18 @@ public class UsersActivity extends BaseActivity {
     }
 
     class UsersAdapter extends BaseAdapter {
+        JSONArray users = null;
+
+        public void updateUsers(JSONArray users) {
+            this.users = users;
+            this.notifyDataSetChanged();
+        }
+
         @Override
         public int getCount() {
-            return 10;
+            if (this.users == null)
+                return 0;
+            return this.users.size();
         }
 
         @Override
@@ -118,10 +135,29 @@ public class UsersActivity extends BaseActivity {
 //            viewHolder.userNameTextView.setText(object.getString("username"));
 //            viewHolder.departNameTextView.setText(object.getString("departname"));
 
-            viewHolder.orderTextView.setText("1\n2\n3\n4\n5");
-            viewHolder.coordinateTextView.setText("138.93456,32.765\n138.93456,32.765\n138.93456,32.765\n138.93456,32.765\n138.93456,32.765");
-            viewHolder.weightTextView.setText("权重：60\n权重：60\n权重：60\n权重：60\n权重：60");
-            viewHolder.scoreTextView.setText("得分：100\n得分：100\n得分：100\n得分：100\n得分：100");
+            JSONObject user = users.getJSONObject(i);
+            JSONArray points = user.getJSONArray("points");
+
+            String orders = "";
+            String coordinates = "";
+            String weights = "";
+            String scores = "";
+            for (Object point : points) {
+                JSONObject p = (JSONObject) point;
+
+                orders += p.getString("id") + "\n";
+                coordinates += String.format("%.6f,%.6f\n", p.getDouble("latitude"), p.getDouble("longitude"));
+                weights += "权重：" + p.getString("weight") + "\n";
+                scores += "得分：" + p.getString("score") + "\n";
+            }
+//            viewHolder.orderTextView.setText("1\n2\n3\n4\n5");
+//            viewHolder.coordinateTextView.setText("138.93456,32.765\n138.93456,32.765\n138.93456,32.765\n138.93456,32.765\n138.93456,32.765");
+//            viewHolder.weightTextView.setText("权重：60\n权重：60\n权重：60\n权重：60\n权重：60");
+//            viewHolder.scoreTextView.setText("得分：100\n得分：100\n得分：100\n得分：100\n得分：100");
+            viewHolder.orderTextView.setText(orders.substring(0, orders.length() - 1));
+            viewHolder.coordinateTextView.setText(coordinates.substring(0, coordinates.length() - 1));
+            viewHolder.weightTextView.setText(weights.substring(0, weights.length() - 1));
+            viewHolder.scoreTextView.setText(scores.substring(0, scores.length() - 1));
 
             return view;
         }
