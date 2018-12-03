@@ -454,12 +454,23 @@ class AdminExamLine(BaseHandler):
         name = self.get_argument('name', None)
         points = self.get_argument('points', None)
         valid = self.get_argument('valid', None)
-        print(valid)
 
         if name is None and lineid is None:
             self.write(json.dumps({
                 'state': 3,
                 'message': '名字不能为空！'
+            }))
+            return
+
+        from  decimal import Decimal
+        tmp = 0
+        for point in json.loads(points):
+            tmp += Decimal(point.get('weight')) if point.get('weight') else Decimal(0)
+        print(tmp)
+        if tmp != Decimal(1.0):
+            self.write(json.dumps({
+                'state': 4,
+                'message': '权重设置错误！'
             }))
             return
 

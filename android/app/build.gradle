@@ -43,6 +43,7 @@ dependencies {
     compile 'org.slf4j:slf4j-android:1.7.7'
     compile('org.apache.ftpserver:ftpserver-core:1.0.6') {
         exclude module: 'slf4j-api'
+        exclude group: 'org.apache.ftpserver', module: 'ftplet-api'
     }
     compile 'com.hynnet:jxl:2.6.12.1'
 }

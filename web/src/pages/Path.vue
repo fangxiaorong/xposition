@@ -90,6 +90,8 @@
           <v-data-table :headers="headers" :items="selected.points || []" hide-actions>
             <template slot="items" slot-scope="props">
               <!-- <td>{{ props.item.order }}</td> -->
+              <td>{{ props.item.idx }}</td>
+
               <td>{{ props.item.x }}</td>
               <td>{{ props.item.y }}</td>
               <td>{{ props.item.maxdistance }}</td>
@@ -127,7 +129,7 @@ export default {
     items: [],
     dialog: false,
     headers: [
-      // { text: '序号', value: 'name', sortable: false, align: 'left' },
+      { text: '序号', value: 'name', sortable: false, align: 'left' },
       { text: 'X', value: 'calories', sortable: false },
       { text: 'Y', value: 'fat', sortable: false },
       { text: '最大距离', value: 'calories', sortable: false },
@@ -191,7 +193,14 @@ export default {
 
     deleteItem (item) {
       const index = this.selected.points.indexOf(item);
-      confirm('是否删除此点?') && this.selected.points.splice(index, 1);
+      if (confirm('是否删除此点?')) {
+        this.selected.points.splice(index, 1);
+        let points = this.selected.points;
+        for (let i = points.length - 1; i >= 0; i--) {
+          let point = points[i];
+          point.idx = i + 1;
+        }
+      }
     },
 
     close () {
@@ -214,6 +223,12 @@ export default {
         Object.assign(this.selected.points[this.editedIndex], this.editedItem);
       } else {
         this.selected.points.push(this.editedItem);
+
+        let points = this.selected.points;
+        for (let i = points.length - 1; i >= 0; i--) {
+          let point = points[i];
+          point.idx = i + 1;
+        }
       }
       this.close();
     },
@@ -226,6 +241,12 @@ export default {
           data.points = JSON.parse(data.points) || [];
           data.valid = data.valid === 1 ? true : false;
           this.selected = data;
+
+          let points = this.selected.points;
+          for (let i = points.length - 1; i >= 0; i--) {
+            let point = points[i];
+            point.idx = i + 1;
+          }
         } else {
           alert(response.data.message);
         }
