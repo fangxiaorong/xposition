@@ -71,6 +71,8 @@ def init_db():
                 score2 DOUBLE,
                 score3 DOUBLE,
                 score4 DOUBLE,
+                starttime TIMESTAMP,
+                endtime TIMESTAMP,
                 state INTEGER,
                 create_time TIMESTAMP
             );
@@ -224,7 +226,7 @@ class Exam(BaseTable):
         return self._new_record(cursor, name=name, state=1, create_time=datetime.now().isoformat(), **kwargs)
 
     def query_records(self, cursor, **kwargs):
-        result = self._query_record(cursor, ('id', 'name', 'level1', 'level2', 'level3', 'level4', 'score1', 'score2', 'score3', 'score4', 'state', 'create_time'), **kwargs)
+        result = self._query_record(cursor, ('id', 'name', 'level1', 'level2', 'level3', 'level4', 'score1', 'score2', 'score3', 'score4', 'starttime', 'endtime', 'state', 'create_time'), **kwargs)
         if result:
             active_item_id = r_conn.hget(self._exam_active_id, '-1') or b'-1'
             active_item_id = int(active_item_id)
@@ -234,7 +236,7 @@ class Exam(BaseTable):
         return (result, active_item_id)
 
     def query_record(self, cursor, **kwargs):
-        result = self._query_record(cursor, ('id', 'name', 'level1', 'level2', 'level3', 'level4', 'score1', 'score2', 'score3', 'score4', 'state', 'create_time'), **kwargs)
+        result = self._query_record(cursor, ('id', 'name', 'level1', 'level2', 'level3', 'level4', 'score1', 'score2', 'score3', 'score4', 'starttime', 'endtime', 'state', 'create_time'), **kwargs)
         if result:
             active_item_id = r_conn.hget(self._exam_active_id, '-1') or b'-1'
             active_item_id = int(active_item_id)
@@ -250,16 +252,32 @@ class Exam(BaseTable):
         result = -1
 
         if not r_conn.hexists(self._exam_active_id, str(exam_id)):
-            exam_user = table_manager(ExamUser)
-            if len(exam_user.query_records(cursor, exam_id=exam_id)) > 0:
-                self._update_record(cursor, exam_id, state=2, **kwargs)
-                r_conn.hmset(self._exam_active_id, {str(exam_id): 1, '-1': exam_id})
-
-                exam_user.update_active(cursor, exam_id)
-
-                result = 1
+            exam_info, _ = table_manager(Exam).query_record(cursor, id=exam_id)
+            starttime = -1
+            endtime = -1
+            current_time = datetime.now().timestamp()
+            try:
+                starttime = datetime.strptime(exam_info.get('starttime'), '%Y-%m-%d %H:%M:%S').timestamp()
+                endtime = datetime.strptime(exam_info.get('endtime'), '%Y-%m-%d %H:%M:%S').timestamp()
+            except Exception as e:
+                pass
+            print(starttime, endtime, current_time)
+            if starttime <= 0 or endtime <= 0:
+                result = 1002 
+            elif current_time <= starttime or current_time > endtime:
+                result = 1003 
             else:
-                result = 1000
+                exam_user = table_manager(ExamUser)
+                if len(exam_user.query_records(cursor, exam_id=exam_id)) > 0:
+                    self._update_record(cursor, exam_id, state=2, **kwargs)
+                    r_conn.hmset(self._exam_active_id, {str(exam_id): 1, '-1': exam_id})
+
+                    exam_user.update_active(cursor, exam_id)
+
+                    result = 1
+                else:
+                    result = 1000
+                pass
         else:
             result = 1001
         return result
@@ -306,6 +324,11 @@ class ExamUser(BaseTable):
                     exam.update({'line': line_dict.get(exam.get('line_id'))})
         return exam_users
 
+    def query_detail_records(self, cursor, **kwargs):
+        exem_detail_users = self._query_record(cursor, ('id', 'username', 'departname', 'detail'), **kwargs)
+
+        return exem_detail_users
+
     def delete_record(self, cursor, exam_id):
         return self._delete_record(cursor, exam_id=exam_id)
 
@@ -334,7 +357,7 @@ class ExamUser(BaseTable):
             user_pos = user_pos.decode('utf-8')
             if user_pos != '':
                 pos_info = json.loads(user_pos)
-                tmp_time = float(pos_info.get('create_time'))
+                tmp_time = float(pos_info.get('create_time')) if pos_info.get('create_time') else 0
                 if current_time - tmp_time < 300:
                     pos_info.update({'state': 1})
                 else:
@@ -574,10 +597,7 @@ class ExamCalculate(object):
                 'y': y,
                 'stime': stime,
                 'etime': etime,
-                'locations': [],
-                'level1': float(point.get('level1')),
-                'level2': float(point.get('level2')),
-                'level3': float(point.get('level3')),
+                'locations': []
             })
             points.append(point)
         line_data.update({'points': points})
@@ -726,11 +746,13 @@ class ExamCalculate(object):
             #     float(exam_info.get('score1')), float(exam_info.get('score2')),
             #     float(exam_info.get('score3')), float(exam_info.get('score4')), 
             # )
+            table_manager(Exam).update_record(cursor, active_id, level1=level1, level2=level2, level3=level3, level4=level4)
+
             score1, score2, score3, score4 = (
                 float(exam_info.get('score1')), float(exam_info.get('score2')),
                 float(exam_info.get('score3')), float(exam_info.get('score4')),
             )
-            result = {'level1': level1, 'level2': level2, 'level3': level3, 'level4': level4}
+            result = {'examname': exam_info.get('name'), 'level1': level1, 'level2': level2, 'level3': level3, 'level4': level4}
             users = []
 
             user_info_list = table_manager(ExamUser).query_records(cursor, exam_id=active_id)
@@ -739,7 +761,7 @@ class ExamCalculate(object):
 
                 line_info = table_manager(ExamLine).query_record(cursor, id=line_id)
                 
-                if not line_info:
+                if not line_info or not line_info.get('points'):
                     continue
 
                 line_info = self._conver_line_info(line_info)
@@ -749,7 +771,7 @@ class ExamCalculate(object):
                 for record in records:
                     self._dispatch_nearest_point(line_info.get('points'), record)
 
-                user_result = {'name': line_info.get('name')}
+                user_result = {'linename': line_info.get('name'), 'username': user_info.get('username'), 'departname': user_info.get('departname')}
 
                 points = []
                 total_score = 0
@@ -765,7 +787,7 @@ class ExamCalculate(object):
                             min_distance = location.get('distance')
 
                     w = float(point.get('weight'))
-                    if suite_location:    
+                    if suite_location:
                         score = 0
                         if min_distance <= level1:
                             score = score1
@@ -797,6 +819,7 @@ class ExamCalculate(object):
                     points.append(data)
 
                 user_result.update({'points': points, 'total_score': total_score})
+                table_manager(ExamUser).update_record(cursor, user_info.get('id'), detail=json.dumps(user_result))
                 users.append(user_result)
             result.update({'users': users})
         print(result)
@@ -818,6 +841,7 @@ def table_manager(table, ext_name=None, create=True, **kwargs):
 # print(ExamCalculate._calculate_distance(39.923423, 116.368904, 39.922501, 116.387271))
 # ExamCalculate.calculate(2)        
 # print(ExamCalculate._dd2k_to_amap(4425446.67386214, 20453185.9322068))
+# ExamCalculate.calculate_all(2, 10, 15, 30)
 
 def test():
     with CursorManager() as cursor:

@@ -1,5 +1,6 @@
 package job.fscience.com.xposition;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -36,7 +37,42 @@ public class UsersActivity extends BaseActivity {
         findViewById(R.id.export).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                if (adapter.getUsers() != null) {
+                    Intent intent = new Intent(UsersActivity.this, ExportActivity.class);
+                    intent.putExtra("data", adapter.getUsers().toJSONString());
+                    intent.putExtra("examName", adapter.getExamName());
+                    startActivity(intent);
+                } else {
+                    Toast.makeText(UsersActivity.this, "等待数据加载完成.", Toast.LENGTH_LONG).show();
+                }
+            }
+        });
 
+        XApplication.getServerInstance().managerGetResults(new AuthCallback() {
+            @Override
+            public void onFailureEx(Call call, IOException e) {
+                showTextOnUIThread("网络问题！");
+            }
+
+            @Override
+            public void onResponseEx(final JSONObject data) throws IOException {
+                if (data == null) {
+                    showTextOnUIThread("服务器问题");
+                } else if (data.getInteger("state") == 1) {
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            ((TextView) findViewById(R.id.level1)).setText(data.getString("level1"));
+                            ((TextView) findViewById(R.id.level2)).setText(data.getString("level2"));
+                            ((TextView) findViewById(R.id.level3)).setText(data.getString("level3"));
+                            ((TextView) findViewById(R.id.level4)).setText(data.getString("level4"));
+
+                            adapter.updateUsers(data.getJSONArray("users"), data.getString("examname"));
+                        }
+                    });
+                } else {
+                    showTextOnUIThread(data.getString("message"));
+                }
             }
         });
     }
@@ -62,7 +98,7 @@ public class UsersActivity extends BaseActivity {
             return;
         }
 
-        XApplication.getServerInstance().managerGetResults(level1, level2, level3, level4, new AuthCallback() {
+        XApplication.getServerInstance().managerQueryResults(level1, level2, level3, level4, new AuthCallback() {
             @Override
             public void onFailureEx(Call call, IOException e) {
                 showTextOnUIThread("网络问题！");
@@ -76,7 +112,7 @@ public class UsersActivity extends BaseActivity {
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            adapter.updateUsers(data.getJSONArray("users"));
+                            adapter.updateUsers(data.getJSONArray("users"), data.getString("examname"));
                         }
                     });
                     System.out.println(data);
@@ -89,10 +125,20 @@ public class UsersActivity extends BaseActivity {
 
     class UsersAdapter extends BaseAdapter {
         JSONArray users = null;
+        String examName = null;
 
-        public void updateUsers(JSONArray users) {
+        public void updateUsers(JSONArray users, String examName) {
             this.users = users;
+            this.examName = examName;
             this.notifyDataSetChanged();
+        }
+
+        public JSONArray getUsers() {
+            return users;
+        }
+
+        public String getExamName() {
+            return examName;
         }
 
         @Override
@@ -120,6 +166,7 @@ public class UsersActivity extends BaseActivity {
             if (convertView == null) {
                 view = inflater.inflate(R.layout.item_user_detail, null);
                 UsersHolder holder = new UsersHolder();
+                holder.titleTextView = view.findViewById(R.id.title);
                 holder.orderTextView =  view.findViewById(R.id.order);
                 holder.coordinateTextView = view.findViewById(R.id.coordinate);
                 holder.weightTextView = view.findViewById(R.id.weight);
@@ -129,11 +176,6 @@ public class UsersActivity extends BaseActivity {
             }else{
                 viewHolder = (UsersHolder) convertView.getTag();
             }
-
-//            JSONObject object = data.getJSONObject(i);
-//            viewHolder.userIdTextView.setText(object.getString("id"));
-//            viewHolder.userNameTextView.setText(object.getString("username"));
-//            viewHolder.departNameTextView.setText(object.getString("departname"));
 
             JSONObject user = users.getJSONObject(i);
             JSONArray points = user.getJSONArray("points");
@@ -150,10 +192,8 @@ public class UsersActivity extends BaseActivity {
                 weights += "权重：" + p.getString("weight") + "\n";
                 scores += "得分：" + p.getString("score") + "\n";
             }
-//            viewHolder.orderTextView.setText("1\n2\n3\n4\n5");
-//            viewHolder.coordinateTextView.setText("138.93456,32.765\n138.93456,32.765\n138.93456,32.765\n138.93456,32.765\n138.93456,32.765");
-//            viewHolder.weightTextView.setText("权重：60\n权重：60\n权重：60\n权重：60\n权重：60");
-//            viewHolder.scoreTextView.setText("得分：100\n得分：100\n得分：100\n得分：100\n得分：100");
+
+            viewHolder.titleTextView.setText(String.format("%s  排名%d\n线路:%s  单位:%s  总得分:%.2f", user.getString("username"), i + 1, user.getString("linename"), user.getString("departname"), user.getDouble("total_score")));
             viewHolder.orderTextView.setText(orders.substring(0, orders.length() - 1));
             viewHolder.coordinateTextView.setText(coordinates.substring(0, coordinates.length() - 1));
             viewHolder.weightTextView.setText(weights.substring(0, weights.length() - 1));
@@ -164,6 +204,7 @@ public class UsersActivity extends BaseActivity {
     }
 
     class UsersHolder {
+        TextView titleTextView;
         TextView orderTextView;
         TextView coordinateTextView;
         TextView weightTextView;

@@ -17,7 +17,7 @@ import okhttp3.Response;
 import java.io.IOException;
 
 public class LoginActivity extends AppCompatActivity {
-    public static JSONObject userInfo = null;
+    public static JSONObject userInfo = null; // JSONObject.parseObject("{\"username\": \"username\", \"id\": 10}");
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

@@ -36,9 +36,9 @@
             android:theme="@style/AppTheme">
 
         <!--debug-->
-        <!--<meta-data android:name="com.amap.api.v2.apikey" android:value="4894d9dbb777194f7756b5f8b2eaeb7a" />-->
+        <meta-data android:name="com.amap.api.v2.apikey" android:value="4894d9dbb777194f7756b5f8b2eaeb7a" />
         <!--online-->
-        <meta-data android:name="com.amap.api.v2.apikey" android:value="7f5218957f33e29cfded0a2503c58fe6"/>
+        <!--<meta-data android:name="com.amap.api.v2.apikey" android:value="7f5218957f33e29cfded0a2503c58fe6"/>-->
 
         <activity android:name="job.fscience.com.xposition1.LoginActivity" android:screenOrientation="portrait">
             <intent-filter>

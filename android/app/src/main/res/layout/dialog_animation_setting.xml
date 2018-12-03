@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              xmlns:app="http://schemas.android.com/apk/res-auto"
+              xmlns:custom="http://schemas.android.com/apk/res-auto"
+              android:orientation="vertical"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent">
+    <TextView
+            android:text="设置动画时间"
+            android:textAlignment="center"
+            android:paddingTop="20dp"
+            android:paddingBottom="20dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+
+    <job.fscience.com.lib.DoubleSlideSeekBar
+            android:id="@+id/seekbar"
+            android:layout_width="300dp"
+            android:layout_height="wrap_content"
+            custom:lineHeight="20dp"
+            custom:textSize="16sp"
+            custom:textColor="#e40627"
+            custom:inColor="#ace208"
+            custom:outColor="#AAAAAA"
+            custom:imageLow="@mipmap/imgv_slide"
+            custom:imageBig="@mipmap/imgv_slide"
+            custom:imagewidth="20dp"
+            custom:imageheight="20dp"
+            custom:hasRule="false"
+            custom:bigValue="100"
+            custom:smallValue="0"
+    />
+
+    <LinearLayout
+            android:gravity="right"
+            android:paddingBottom="20dp"
+            android:paddingTop="20dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+        <Button
+                android:id="@+id/cancel_action"
+                android:text="取消"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+        <Button
+                android:id="@+id/confirm_action"
+                android:text="确定"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+    </LinearLayout>
+</LinearLayout>

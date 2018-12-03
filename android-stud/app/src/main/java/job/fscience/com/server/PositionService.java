@@ -3,10 +3,7 @@ package job.fscience.com.server;
 import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
-import com.amap.api.location.AMapLocation;
-import com.amap.api.location.AMapLocationClient;
-import com.amap.api.location.AMapLocationClientOption;
-import com.amap.api.location.AMapLocationListener;
+import com.amap.api.location.*;
 import job.fscience.com.xposition1.LoginActivity;
 import job.fscience.com.xposition1.XApplication;
 import okhttp3.Call;
@@ -39,6 +36,7 @@ public class PositionService extends Service implements AMapLocationListener, Ca
         option.setLocationMode(AMapLocationClientOption.AMapLocationMode.Hight_Accuracy);
 //        option.setOnceLocation(true);
 //        option.setOnceLocationLatest(true);
+        option.setLocationCacheEnable(false);
         option.setInterval(2000);
         locationClient.setLocationOption(option);
     }
@@ -60,8 +58,10 @@ public class PositionService extends Service implements AMapLocationListener, Ca
         Intent intent = new Intent(ACTION_LOCATION);
         if (aMapLocation != null) {
             if (aMapLocation.getErrorCode() == 0) {
+//                && aMapLocation.getLocationQualityReport().getGPSStatus() == AMapLocationQualityReport.GPS_STATUS_OK) {
                 intent.putExtra("latitude", aMapLocation.getLatitude());
                 intent.putExtra("longitude", aMapLocation.getLongitude());
+                intent.putExtra("speed", aMapLocation.getSpeed());
                 intent.putExtra("address", aMapLocation.getAddress());
                 intent.putExtra("city", aMapLocation.getCity());
                 intent.putExtra("state", aMapLocation.getErrorCode());

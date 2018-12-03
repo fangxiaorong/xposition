@@ -25,6 +25,8 @@ ERR_MSG_MAP = {
     'DB_10': '记录重复',
     'DB_1000': '考试人员不能为空',
     'DB_1001': '考试已经考试完毕',
+    'DB_1002': '起止时间不能为空',
+    'DB_1003': '不在考试范围内',
 }
 
 def auth_check(method):
@@ -198,6 +200,34 @@ class ManagerGetUserResult(web.RequestHandler):
 @app.route(r'/api/manager/user/results')
 class ManagerUserResults(web.RequestHandler):
     def get(self):
+        results = {}
+
+        active_id = table_manager(Exam).get_active_id()
+        if active_id > 0:
+            with CursorManager() as cursor:
+                exam_info, active_id = table_manager(Exam).query_record(cursor, id=active_id)
+                level1 = exam_info.get('level1') or 0
+                level2 = exam_info.get('level2') or 0
+                level3 = exam_info.get('level3') or 0
+                level4 = exam_info.get('level4') or 0
+
+                print(exam_info)
+                results.update({'examname': exam_info.get('name'),'level1': level1, 'level2': level2, 'level3': level3, 'level4': level4})
+
+                if level1 > 0 and level2 > 0 and level3 > 0 and level4 > 0:
+                    user_info_list = table_manager(ExamUser).query_detail_records(cursor, exam_id=active_id)
+                    users = []
+                    for user_info in user_info_list:
+                        if not user_info.get('detail'):
+                            continue
+
+                        users.append(json.loads(user_info.get('detail')))
+                    users.sort(key=lambda user: user['total_score'], reverse=True)
+                    results.update({'users': users})
+        results.update({'state': 1, 'message': '成功'})
+        self.write(json.dumps(results))
+
+    def post(self):
         level1 = self.get_argument('level1', 0)
         level2 = self.get_argument('level2', 0)
         level3 = self.get_argument('level3', 0)
@@ -302,6 +332,8 @@ class AdminExam(BaseHandler):
         score2 = self.get_argument('score2', 0)
         score3 = self.get_argument('score3', 0)
         score4 = self.get_argument('score4', 0)
+        starttime = self.get_argument('starttime', '')
+        endtime = self.get_argument('endtime', '')
 
         with CursorManager() as cursor:
             exam = table_manager(Exam)
@@ -311,10 +343,11 @@ class AdminExam(BaseHandler):
                 if score1 == 0:
                     result = exam.update_active(cursor, exam_id)
                 else:
-                    result = exam.update_record(cursor, exam_id, score1=score1, score2=score2, score3=score3, score4=score4)
+                    result = exam.update_record(cursor, exam_id, score1=score1, score2=score2, score3=score3, score4=score4, starttime=starttime, endtime=endtime)
             else:
-                result = exam.new_record(cursor, exam_name, score1=score1, score2=score2, score3=score3, score4=score4)
+                result = exam.new_record(cursor, exam_name, score1=score1, score2=score2, score3=score3, score4=score4, starttime=starttime, endtime=endtime)
 
+            print(result)
             self.write(json.dumps({
                 'state': result,
                 'message': ERR_MSG_MAP.get('DB_' + str(result)) or '失败'

@@ -66,13 +66,14 @@ public class MacUtils {
      * @return
      */
     public static String getMobileMAC(Context context) {
-        mWifiManager = getInstant(context);
-        // 如果当前设备系统大于等于6.0 使用下面的方法
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            return getAndroidHighVersionMac();
-        } else { // 当前设备在6.0以下
-            return getAndroidLowVersionMac(mWifiManager);
-        }
+//        mWifiManager = getInstant(context);
+//        // 如果当前设备系统大于等于6.0 使用下面的方法
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+//            return getAndroidHighVersionMac();
+//        } else { // 当前设备在6.0以下
+//            return getAndroidLowVersionMac(mWifiManager);
+//        }
+        return "A8:0C:63:26:ED:EB";
     }
 
     /**

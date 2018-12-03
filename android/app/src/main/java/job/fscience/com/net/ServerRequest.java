@@ -17,7 +17,7 @@ public class ServerRequest {
 
     String userId;
 //    String baseUrl = "http://10.0.108.155";
-//    String baseUrl = "http://192.168.0.102";
+//    String baseUrl = "http://192.168.101.11";
     String baseUrl = "http://212.64.26.210";
 
     public ServerRequest(Context context) {
@@ -90,9 +90,19 @@ public class ServerRequest {
         client.newCall(request).enqueue(callback);
     }
 
-    public void managerGetResults(double level1, double level2, double level3, double level4, Callback callback) {
-        String params = String.format("level1=%f&level2=%f&level3=%f&level4=%f", level1, level2, level3, level4);
-        Request request = new Request.Builder().url(baseUrl + "/api/manager/user/results?" + params).build();
+    public void managerGetResults(Callback callback) {
+        Request request = new Request.Builder().url(baseUrl + "/api/manager/user/results").build();
+        client.newCall(request).enqueue(callback);
+    }
+
+    public void managerQueryResults(double level1, double level2, double level3, double level4, Callback callback) {
+        RequestBody body = new FormBody.Builder()
+                .add("level1", "" +level1)
+                .add("level2", "" + level2)
+                .add("level3", "" + level3)
+                .add("level4", "" + level4)
+                .build();
+        Request request = new Request.Builder().url(baseUrl + "/api/manager/user/results").post(body).build();
         client.newCall(request).enqueue(callback);
     }
 

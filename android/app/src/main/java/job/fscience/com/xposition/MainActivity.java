@@ -244,7 +244,15 @@ public class MainActivity extends BaseActivity implements CompoundButton.OnCheck
         findViewById(R.id.play).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                startPlay();
+//                startPlay();
+                final AnimationSettingDialog dialog = new AnimationSettingDialog(MainActivity.this);
+                dialog.show();
+                dialog.setCallback(new AnimationSettingDialog.AnimationSettingClick() {
+                    @Override
+                    public void onConfirmClick() {
+                        startPlay(dialog.getMinValue(), dialog.getMaxValue());
+                    }
+                });
             }
         });
 
@@ -424,9 +432,15 @@ public class MainActivity extends BaseActivity implements CompoundButton.OnCheck
     }
 
     SmoothMoveMarker smoothMarker = null;
-    private void startPlay() {
+    private void startPlay(float minVlaue, float maxValue) {
+        stopPlay();
+
         if (polyline != null) {
-            List<LatLng> points = polyline.getPoints();
+            List<LatLng> xpoints = polyline.getPoints();
+            List<LatLng> points = new ArrayList<>();
+            for (int idx = (int) ((xpoints.size() / 100) * minVlaue); idx < (int) ((xpoints.size() / 100) * maxValue); idx ++) {
+                points.add(xpoints.get(idx));
+            }
             LatLngBounds bounds = new LatLngBounds(points.get(0), points.get(points.size() - 2));
             mMap.animateCamera(CameraUpdateFactory.newLatLngBounds(bounds, 50));
 
@@ -442,13 +456,14 @@ public class MainActivity extends BaseActivity implements CompoundButton.OnCheck
             // 设置滑动的轨迹左边点
             smoothMarker.setPoints(subList);
             // 设置滑动的总时间
-            smoothMarker.setTotalDuration(40);
+            smoothMarker.setTotalDuration((int) (40 * ((maxValue - minVlaue) / 100)));
             // 开始滑动
             smoothMarker.startSmoothMove();
 
             smoothMarker.setMoveListener(new SmoothMoveMarker.MoveListener() {
                 @Override
                 public void move(double v) {
+                    System.out.println(v);
                     if (v <= 0) {
                         stopPlay();
                     }

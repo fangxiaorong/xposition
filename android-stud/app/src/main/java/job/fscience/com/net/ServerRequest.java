@@ -10,8 +10,8 @@ public class ServerRequest {
     OkHttpClient client = new OkHttpClient();
 
     String userId;
-//    String baseUrl = "http://10.0.108.155";
-    String baseUrl = "http://212.64.26.210";
+    String baseUrl = "http://192.168.101.11";
+//    String baseUrl = "http://212.64.26.210";
 
     public ServerRequest(Context context) {
         userId = MacUtils.getMobileMAC(context);

@@ -33,8 +33,14 @@
                     <v-container grid-list-md>
                       <v-layout wrap>
                         <!-- <v-text-field v-model="examname" label="考试名称"></v-text-field> -->
-                        <v-flex xs12 sm12 md12>
+                        <v-flex xs12 sm12 md6>
                           <v-text-field v-model="editedItem.name" label="考试名称" :readonly="editedItem.id>=0"></v-text-field>
+                        </v-flex>
+                        <v-flex xs12 sm12 md3>
+                          <v-text-field v-model="editedItem.starttime" label="开始时间(1999-10-10 12:12:12)"></v-text-field>
+                        </v-flex>
+                        <v-flex xs12 sm12 md3>
+                          <v-text-field v-model="editedItem.endtime" label="结束时间(1999-10-10 12:12:12)"></v-text-field>
                         </v-flex>
                         <v-flex xs12 sm6 md3>
                           <v-text-field v-model="editedItem.score1" label="优秀"></v-text-field>
@@ -65,6 +71,7 @@
         <v-flex lg9 v-if="selected">
           <v-toolbar flat color="white">
             <!-- <v-toolbar-title>{{ selected.name + '(&#60;=' + selected.level1 + '优秀 &#60;=' + selected.level2 + '良好 &#60;=' + selected.level3 + '及格 &#60;=' + selected.level4 + '得分)'}}</v-toolbar-title> -->
+            <!--  + '(' + (selected.starttime === undefined ? '时间未设置' : (selected.starttime + '-' + selected.endtime)) + ')' -->
             <v-toolbar-title>{{ selected.name + ' -- [ 优秀(' + selected.score1 + ') 良好(' + selected.score2 + ') 及格(' + selected.score3 + ') 得分(' + selected.score4 + ') ]'}}</v-toolbar-title>
             <v-divider class="mx-2" inset vertical></v-divider>
             <v-spacer></v-spacer>
@@ -119,7 +126,9 @@ export default {
       score1: 0,
       score2: 0,
       score3: 0,
-      score4: 0
+      score4: 0,
+      starttime: '',
+      endtime: ''
     },
     defaultItem: {
       id: -1,
@@ -127,7 +136,9 @@ export default {
       score1: 0,
       score2: 0,
       score3: 0,
-      score4: 0
+      score4: 0,
+      starttime: '',
+      endtime: ''
     }
   }),
   computed: {
@@ -174,12 +185,16 @@ export default {
     newExam () {
       if (this.editedItem.name.trim() === '') {
         alert('名字不能为空！');
+      } else if (this.editedItem.starttime.trim() === '' || this.editedItem.endtime.trim() === '') {
+        alert('起止时间必须设置');
       } else {
         let data = 'name=' + encodeURI(this.editedItem.name.trim()) +
                    '&score1=' + this.editedItem.score1 +
                    '&score2=' + this.editedItem.score2 + 
                    '&score3=' + this.editedItem.score3 +
-                   '&score4=' + this.editedItem.score4;
+                   '&score4=' + this.editedItem.score4 +
+                   '&starttime=' + this.editedItem.starttime +
+                   '&endtime=' + this.editedItem.endtime;
         if (this.editedIndex > -1) {
           // Object.assign(this.desserts[this.editedIndex], this.editedItem);
           data = data + '&exam_id=' + this.editedItem.id;

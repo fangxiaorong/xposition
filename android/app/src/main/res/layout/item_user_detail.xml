@@ -6,6 +6,7 @@
               android:layout_width="match_parent"
               android:layout_height="match_parent">
     <TextView
+            android:id="@+id/title"
             android:text="张三（001） 北京工厂大学041班 总得分90"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"/>

@@ -231,7 +231,13 @@ public class MacUtils {
             }
         }
         return mac;
+    }
 
+    public static String getIpAddress(Context context) {
+        WifiManager wifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
+        WifiInfo wifiInfo = wifiManager.getConnectionInfo();
+        int ipAddress = wifiInfo.getIpAddress();
+        return (ipAddress & 0xFF ) + "." + ((ipAddress >> 8 ) & 0xFF) + "." + ((ipAddress >> 16 ) & 0xFF) + "." + ( ipAddress >> 24 & 0xFF);
     }
 
     @TargetApi(9)
