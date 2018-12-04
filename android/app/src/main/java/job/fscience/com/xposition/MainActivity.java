@@ -424,6 +424,7 @@ public class MainActivity extends BaseActivity implements CompoundButton.OnCheck
 //        findViewById(R.id.attribute).setVisibility(View.GONE);
         findViewById(R.id.delete).setVisibility(View.GONE);
         findViewById(R.id.play).setVisibility(View.GONE);
+
         if (clear) {
             ((ListView) findViewById(R.id.user_list)).clearChoices();
             ((ListView) findViewById(R.id.user_list)).invalidateViews();

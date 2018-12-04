@@ -1,5 +1,6 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
                 xmlns:tools="http://schemas.android.com/tools"
+                xmlns:custom="http://schemas.android.com/apk/res-auto"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 tools:context=".MainActivity" >
@@ -50,6 +51,12 @@
                     android:layout_height="48dp"
                     android:orientation="horizontal">
                 <ImageView
+                        android:id="@+id/attribute"
+                        android:src="@mipmap/attribute"
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:padding="10dp"/>
+                <ImageView
                         android:id="@+id/route"
                         android:src="@mipmap/route"
                         android:visibility="gone"
@@ -60,12 +67,6 @@
                         android:id="@+id/play"
                         android:src="@mipmap/play"
                         android:visibility="gone"
-                        android:layout_width="wrap_content"
-                        android:layout_height="match_parent"
-                        android:padding="10dp"/>
-                <ImageView
-                        android:id="@+id/attribute"
-                        android:src="@mipmap/attribute"
                         android:layout_width="wrap_content"
                         android:layout_height="match_parent"
                         android:padding="10dp"/>
@@ -84,7 +85,6 @@
                         android:layout_width="wrap_content"
                         android:layout_height="match_parent"
                         android:padding="10dp"/>
-
             </LinearLayout>
 
             <include android:layout_width="match_parent"

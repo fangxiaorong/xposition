@@ -13,6 +13,8 @@ import 'vuetify/dist/vuetify.min.css';
 import 'material-design-icons-iconfont/dist/material-design-icons.css';
 import axios from 'axios';
 import VueAxios from 'vue-axios';
+import ElementUI from 'element-ui';
+import 'element-ui/lib/theme-chalk/index.css';
 
 Vue.config.productionTip = false;
 // Helpers
@@ -40,6 +42,7 @@ Vue.use(Vuetify, {
     }
   }
 });
+Vue.use(ElementUI);
 // Bootstrap application components
 
 

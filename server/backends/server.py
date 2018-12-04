@@ -190,11 +190,18 @@ class ManagerGetUserTrack(BaseHandler):
 @app.route(r'/api/manager/user/result/(\d+)')
 class ManagerGetUserResult(web.RequestHandler):
     def get(self, user_id):
-        data = ExamCalculate.calculate(int(user_id))
-        data.update({
-            'state': 1,
-            'message': '成功',
-        })
+        data = {'state': 2, 'message': '用户未找到'}
+        with CursorManager() as cursor:
+            user_info_list = table_manager(ExamUser).query_detail_records(cursor, id=user_id)
+            if user_info_list:
+                user_info = user_info_list[0]
+                if user_info.get('detail'):
+                    user_info.update({'detail': json.loads(user_info.get('detail'))})
+                    data.update(user_info)
+                    data.update({'state': 1, 'message': '成功'})
+                else:
+                    data.update({'state': 3, 'message': '请先计算考试结果'})
+        print(data)
         self.write(json.dumps(data))
 
 @app.route(r'/api/manager/user/results')

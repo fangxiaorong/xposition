@@ -7,6 +7,7 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
@@ -41,9 +42,14 @@ public class AttributeActivity extends BaseActivity {
                     @Override
                     public void run() {
                         try {
-                            JSONObject points = JSON.parseObject(response.body().string());
-                            adapter.updateData(points.getJSONArray("points"));
-                            ((TextView) findViewById(R.id.head)).setText(points.getString("line_name") + ":  " + points.getString("total_score"));
+                            JSONObject userInfo = JSON.parseObject(response.body().string());
+                            if (userInfo.getInteger("state") == 1) {
+                                JSONObject detail = userInfo.getJSONObject("detail");
+                                adapter.updateData(detail.getJSONArray("points"));
+                                ((TextView) findViewById(R.id.head)).setText(detail.getString("linename") + ":  " + detail.getString("total_score"));
+                            } else {
+                                Toast.makeText(AttributeActivity.this, userInfo.getString("message"), Toast.LENGTH_LONG).show();
+                            }
                         } catch (Exception e) {}
                     }
                 });

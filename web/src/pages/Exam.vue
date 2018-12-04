@@ -33,15 +33,15 @@
                     <v-container grid-list-md>
                       <v-layout wrap>
                         <!-- <v-text-field v-model="examname" label="考试名称"></v-text-field> -->
-                        <v-flex xs12 sm12 md6>
+                        <v-flex xs12 sm12 md12>
                           <v-text-field v-model="editedItem.name" label="考试名称" :readonly="editedItem.id>=0"></v-text-field>
                         </v-flex>
-                        <v-flex xs12 sm12 md3>
+                        <!-- <v-flex xs12 sm12 md3>
                           <v-text-field v-model="editedItem.starttime" label="开始时间(1999-10-10 12:12:12)"></v-text-field>
                         </v-flex>
                         <v-flex xs12 sm12 md3>
                           <v-text-field v-model="editedItem.endtime" label="结束时间(1999-10-10 12:12:12)"></v-text-field>
-                        </v-flex>
+                        </v-flex> -->
                         <v-flex xs12 sm6 md3>
                           <v-text-field v-model="editedItem.score1" label="优秀"></v-text-field>
                         </v-flex>
@@ -54,6 +54,14 @@
                         <v-flex xs12 sm6 md3>
                           <v-text-field v-model="editedItem.score4" label="得分"></v-text-field>
                         </v-flex>
+
+                        <v-flex xs12 sm12 md6>
+                         <el-date-picker v-model="editedItem.starttime" type="datetime" placeholder="选择日期时间" />
+                        </v-flex>
+                        <v-flex xs12 sm12 md6>
+                          <el-date-picker v-model="editedItem.endtime" type="datetime" placeholder="选择日期时间" />
+                        </v-flex>
+
                       </v-layout>
                     </v-container>
                   </v-card-text>
@@ -104,6 +112,8 @@
 </template>
 
 <script>
+import jschardet from 'jschardet';
+
 export default {
   data: () => ({
     selected: undefined,
@@ -240,9 +250,26 @@ export default {
       if (typeof (FileReader) !== 'undefined') {
         let that = this;
         let reader = new FileReader();
-        reader.readAsText(event.target.files[0]);
+        reader.readAsArrayBuffer(event.target.files[0]);
         reader.onload = function (evt) {
-          let data = evt.target.result.split('\r\n');
+          let data =  new Uint8Array(evt.target.result);
+          let characterTestStr = null;
+          for (let index in data) {
+            if (index <= 100) {
+              characterTestStr += String.fromCharCode(data[index]);
+            } else {
+              break;
+            }
+          }
+          let codepage = jschardet.detect(characterTestStr.substring(0, 1000)).encoding;
+          if (codepage === 'GB2312' || codepage === 'GB18030') {
+            codepage = 'GB18030';
+          } else if (!(codepage === 'ascii' || codepage === 'UTF-8' || codepage === 'UTF-16BE' || codepage === 'UTF-16LE')) {
+            alert('不支持的编码格式:' + codepage + ';你只能使用UTF-8或GB18030(GB2320,GBK)编码格式文件');
+            return;
+          }
+
+          data = new TextDecoder(codepage).decode(data).split('\r\n');
           let result = [];
           console.log(that.selected);
           data.forEach(item => {
