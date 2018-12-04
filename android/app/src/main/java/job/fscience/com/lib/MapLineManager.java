@@ -55,47 +55,47 @@ public class MapLineManager {
         //
     }
 
-    private void requireUserTrack(Integer userId, final boolean notify) {
-        XApplication.getServerInstance().managerGetUserTrack(userId, new Callback() {
-            @Override
-            public void onFailure(Call call, IOException e) {
-                if (notify) {
-                    showTextOnUIThread("网络问题");
-                }
-            }
-
-            @Override
-            public void onResponse(Call call, Response response) throws IOException {
-                final JSONObject object = ServerRequest.parseJSON(response);
-                if (object == null) {
-                    if (notify) {
-                    showTextOnUIThread("服务器问题");
-                    }
-                } else if (object.getInteger("state") == 1) {
-                    activity.runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            updateLine(object.getJSONArray("points"));
-//                            try {
-//                                JSONArray points = object.getJSONArray("points");
-//                                List<LatLng> latLngs = new ArrayList<>();
-//                                for (int idx = 0; idx < points.size(); idx ++) {
-//                                    JSONObject point = points.getJSONObject(idx);
-//                                    latLngs.add(new LatLng(point.getDouble("latitude"), point.getDouble("longitude")));
-//                                }
-//                                polyline = mapView.getMap().addPolyline(new PolylineOptions().
-//                                        addAll(latLngs).width(10).color(Color.argb(255, 1, 1, 1)));
-//                            } catch (Exception e) {}
-                        }
-                    });
-                } else {
-                    if (notify) {
-                        showTextOnUIThread(object.getString("message"));
-                    }
-                }
-            }
-        });
-    }
+//    private void requireUserTrack(Integer userId, final boolean notify) {
+//        XApplication.getServerInstance().managerGetUserTrack(userId, new Callback() {
+//            @Override
+//            public void onFailure(Call call, IOException e) {
+//                if (notify) {
+//                    showTextOnUIThread("网络问题");
+//                }
+//            }
+//
+//            @Override
+//            public void onResponse(Call call, Response response) throws IOException {
+//                final JSONObject object = ServerRequest.parseJSON(response);
+//                if (object == null) {
+//                    if (notify) {
+//                    showTextOnUIThread("服务器问题");
+//                    }
+//                } else if (object.getInteger("state") == 1) {
+//                    activity.runOnUiThread(new Runnable() {
+//                        @Override
+//                        public void run() {
+//                            updateLine(object.getJSONArray("points"));
+////                            try {
+////                                JSONArray points = object.getJSONArray("points");
+////                                List<LatLng> latLngs = new ArrayList<>();
+////                                for (int idx = 0; idx < points.size(); idx ++) {
+////                                    JSONObject point = points.getJSONObject(idx);
+////                                    latLngs.add(new LatLng(point.getDouble("latitude"), point.getDouble("longitude")));
+////                                }
+////                                polyline = mapView.getMap().addPolyline(new PolylineOptions().
+////                                        addAll(latLngs).width(10).color(Color.argb(255, 1, 1, 1)));
+////                            } catch (Exception e) {}
+//                        }
+//                    });
+//                } else {
+//                    if (notify) {
+//                        showTextOnUIThread(object.getString("message"));
+//                    }
+//                }
+//            }
+//        });
+//    }
 
     private void showTextOnUIThread(final String message) {
         activity.runOnUiThread(new Runnable() {

@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              xmlns:app="http://schemas.android.com/apk/res-auto"
-              xmlns:custom="http://schemas.android.com/apk/res-auto"
               android:orientation="vertical"
+              android:background="@color/color1"
               android:layout_width="match_parent"
               android:layout_height="match_parent">
     <TextView
@@ -13,23 +12,105 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"/>
 
-    <job.fscience.com.lib.DoubleSlideSeekBar
-            android:id="@+id/seekbar"
-            android:layout_width="300dp"
-            android:layout_height="wrap_content"
-            custom:lineHeight="20dp"
-            custom:textSize="16sp"
-            custom:textColor="#e40627"
-            custom:inColor="#ace208"
-            custom:outColor="#AAAAAA"
-            custom:imageLow="@mipmap/imgv_slide"
-            custom:imageBig="@mipmap/imgv_slide"
-            custom:imagewidth="20dp"
-            custom:imageheight="20dp"
-            custom:hasRule="false"
-            custom:bigValue="100"
-            custom:smallValue="0"
-    />
+    <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:background="@color/color1"
+            android:gravity="center_vertical"
+            android:orientation="vertical">
+
+        <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_marginLeft="15dp"
+                android:background="@null"
+                android:gravity="center"
+                android:text="开始时间"
+                android:textColor="@color/color3"
+                android:textSize="15sp" />
+
+    </LinearLayout>
+
+    <RelativeLayout
+            android:id="@+id/selectStart"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:background="@color/color2"
+            android:gravity="center_vertical">
+
+        <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_marginLeft="15dp"
+                android:background="@null"
+                android:gravity="center"
+                android:text="当前时间"
+                android:textColor="@color/color4"
+                android:textSize="15sp" />
+
+        <TextView
+                android:id="@+id/startTime"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_alignParentRight="true"
+                android:background="@null"
+                android:gravity="center"
+                android:paddingEnd="15dp"
+                android:paddingStart="15dp"
+                android:textColor="@color/color5"
+                android:textSize="15sp" />
+
+    </RelativeLayout>
+
+    <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:background="@color/color1"
+            android:gravity="center_vertical"
+            android:orientation="vertical">
+
+        <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_marginLeft="15dp"
+                android:background="@null"
+                android:gravity="center"
+                android:text="结束时间"
+                android:textColor="@color/color3"
+                android:textSize="15sp" />
+
+    </LinearLayout>
+
+    <RelativeLayout
+            android:id="@+id/selectEnd"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:background="@color/color2"
+            android:gravity="center_vertical">
+
+        <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_marginLeft="15dp"
+                android:background="@null"
+                android:gravity="center"
+                android:text="当前时间"
+                android:textColor="@color/color4"
+                android:textSize="15sp" />
+
+        <TextView
+                android:id="@+id/endTime"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_alignParentRight="true"
+                android:background="@null"
+                android:gravity="center"
+                android:paddingEnd="15dp"
+                android:paddingStart="15dp"
+                android:textColor="@color/color5"
+                android:textSize="15sp" />
+
+    </RelativeLayout>
 
     <LinearLayout
             android:gravity="right"

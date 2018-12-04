@@ -451,7 +451,7 @@ class UserRecord(BaseTable):
             else:
                 r_conn.rpush(key, pos_str)
 
-    def query_records(self, user_id, max_id=None, **kwargs):
+    def query_records(self, user_id, max_id=None, start=None, end=None, **kwargs):
         result = []
         if r_conn.hexists(self.active_user_info_key, user_id):
             with CursorManager() as cursor:
@@ -462,11 +462,16 @@ class UserRecord(BaseTable):
                 val.append('user_id=%d' % user_id)
                 if max_id is not None:
                     val.append('id>%d' % max_id)
+                if start is not None:
+                    val.append('create_time>=%d' % int(start))
+                if end is not None:
+                    val.append('create_time<=%d' % int(end))
 
                 try:
                     sql_str = '''
                         SELECT id, latitude, longitude, create_time FROM %s WHERE %s order by create_time asc
                     ''' % (self._table, ' and '.join(val))
+                    print(sql_str)
                     cursor.execute(sql_str)
                     result = cursor.fetchall()
                 except Exception as e:

@@ -33,7 +33,7 @@ public class AttributeActivity extends BaseActivity {
         XApplication.getServerInstance().managerGetResult(getIntent().getIntExtra(ACTIVE_USER_ID, -1), new Callback() {
             @Override
             public void onFailure(Call call, IOException e) {
-
+                showTextOnUIThread("网络问题");
             }
 
             @Override
@@ -121,5 +121,14 @@ public class AttributeActivity extends BaseActivity {
         public TextView longitudeTextView;
         public TextView weightTextView;
         public TextView scoreTextView;
+    }
+
+    private void showTextOnUIThread(final String message) {
+        this.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                Toast.makeText(AttributeActivity.this, message, Toast.LENGTH_LONG).show();
+            }
+        });
     }
 }

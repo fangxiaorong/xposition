@@ -3,9 +3,7 @@ package job.fscience.com.xposition;
 import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
-import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
-import com.tencent.bugly.crashreport.CrashReport;
 import job.fscience.com.net.ServerRequest;
 
 public class XApplication extends Application {
@@ -19,7 +17,7 @@ public class XApplication extends Application {
 
         XApplication.context = getApplicationContext();
 
-        CrashReport.initCrashReport(getApplicationContext(), "771384f936", true);
+//        CrashReport.initCrashReport(getApplicationContext(), "771384f936", true);
     }
 
     private static class SingletonRequestHolder {

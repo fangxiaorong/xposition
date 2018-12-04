@@ -195,35 +195,13 @@ public class MainActivity extends BaseActivity implements CompoundButton.OnCheck
                     polyline.remove();
                 }
 
-                XApplication.getServerInstance().managerGetUserTrack(((int) view.getTag()), new AuthCallback() {
+                final int userId = (int) view.getTag();
+                final AnimationSettingDialog dialog = new AnimationSettingDialog(MainActivity.this);
+                dialog.show();
+                dialog.setCallback(new AnimationSettingDialog.AnimationSettingClick() {
                     @Override
-                    public void onFailureEx(Call call, IOException e) {
-                        showTextOnUIThread("网络问题");
-                    }
-
-                    @Override
-                    public void onResponseEx(final JSONObject object) throws IOException {
-                        if (object == null) {
-                            showTextOnUIThread("服务器问题");
-                        } else if (object.getInteger("state") == 1) {
-                            runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    try {
-                                        JSONArray points = object.getJSONArray("points");
-                                        List<LatLng> latLngs = new ArrayList<>();
-                                        for (int idx = 0; idx < points.size(); idx ++) {
-                                            JSONObject point = points.getJSONObject(idx);
-                                            latLngs.add(new LatLng(point.getDouble("latitude"), point.getDouble("longitude")));
-                                        }
-                                        polyline = mapView.getMap().addPolyline(new PolylineOptions().
-                                                addAll(latLngs).width(10).color(Color.argb(255, 1, 1, 1)));
-                                    } catch (Exception e) {}
-                                }
-                            });
-                        } else {
-                            showTextOnUIThread(object.getString("message"));
-                        }
+                    public void onConfirmClick() {
+                        showRoute(userId, dialog.getMinValue(), dialog.getMaxValue());
                     }
                 });
             }
@@ -244,15 +222,7 @@ public class MainActivity extends BaseActivity implements CompoundButton.OnCheck
         findViewById(R.id.play).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-//                startPlay();
-                final AnimationSettingDialog dialog = new AnimationSettingDialog(MainActivity.this);
-                dialog.show();
-                dialog.setCallback(new AnimationSettingDialog.AnimationSettingClick() {
-                    @Override
-                    public void onConfirmClick() {
-                        startPlay(dialog.getMinValue(), dialog.getMaxValue());
-                    }
-                });
+                startPlay();
             }
         });
 
@@ -433,15 +403,17 @@ public class MainActivity extends BaseActivity implements CompoundButton.OnCheck
     }
 
     SmoothMoveMarker smoothMarker = null;
-    private void startPlay(float minVlaue, float maxValue) {
+    private void startPlay() {
         stopPlay();
 
         if (polyline != null) {
-            List<LatLng> xpoints = polyline.getPoints();
-            List<LatLng> points = new ArrayList<>();
-            for (int idx = (int) ((xpoints.size() / 100) * minVlaue); idx < (int) ((xpoints.size() / 100) * maxValue); idx ++) {
-                points.add(xpoints.get(idx));
-            }
+            markManager.hiddenAll();
+
+            List<LatLng> points = polyline.getPoints();
+//            List<LatLng> points = new ArrayList<>();
+//            for (int idx = (int) ((xpoints.size() / 100) * minVlaue); idx < (int) ((xpoints.size() / 100) * maxValue); idx ++) {
+//                points.add(xpoints.get(idx));
+//            }
             LatLngBounds bounds = new LatLngBounds(points.get(0), points.get(points.size() - 2));
             mMap.animateCamera(CameraUpdateFactory.newLatLngBounds(bounds, 50));
 
@@ -457,7 +429,7 @@ public class MainActivity extends BaseActivity implements CompoundButton.OnCheck
             // 设置滑动的轨迹左边点
             smoothMarker.setPoints(subList);
             // 设置滑动的总时间
-            smoothMarker.setTotalDuration((int) (40 * ((maxValue - minVlaue) / 100)));
+            smoothMarker.setTotalDuration(40);
             // 开始滑动
             smoothMarker.startSmoothMove();
 
@@ -479,6 +451,42 @@ public class MainActivity extends BaseActivity implements CompoundButton.OnCheck
             smoothMarker.removeMarker();
             smoothMarker = null;
         }
+        markManager.showAll();
+    }
+
+
+    private void showRoute(int userId, long startTime, long endTime) {
+        XApplication.getServerInstance().managerGetUserTrack(userId, startTime, endTime, new AuthCallback() {
+            @Override
+            public void onFailureEx(Call call, IOException e) {
+                showTextOnUIThread("网络问题");
+            }
+
+            @Override
+            public void onResponseEx(final JSONObject object) throws IOException {
+                if (object == null) {
+                    showTextOnUIThread("服务器问题");
+                } else if (object.getInteger("state") == 1) {
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                JSONArray points = object.getJSONArray("points");
+                                List<LatLng> latLngs = new ArrayList<>();
+                                for (int idx = 0; idx < points.size(); idx ++) {
+                                    JSONObject point = points.getJSONObject(idx);
+                                    latLngs.add(new LatLng(point.getDouble("latitude"), point.getDouble("longitude")));
+                                }
+                                polyline = mMap.addPolyline(new PolylineOptions().
+                                        addAll(latLngs).width(10).color(Color.argb(255, 1, 1, 1)));
+                            } catch (Exception e) {}
+                        }
+                    });
+                } else {
+                    showTextOnUIThread(object.getString("message"));
+                }
+            }
+        });
     }
 
     private void showTextOnUIThread(final String message) {

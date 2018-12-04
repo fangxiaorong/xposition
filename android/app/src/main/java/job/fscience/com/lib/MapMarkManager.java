@@ -132,4 +132,18 @@ public class MapMarkManager {
             marker.setVisible(visible);
         }
     }
+
+    public void hiddenAll() {
+        for (Marker marker : userMap.values()) {
+            marker.setVisible(false);
+        }
+    }
+
+    public void showAll() {
+        for (Integer userId : userMap.keySet()) {
+            if (!userVisibleMap.containsKey(userId) || userVisibleMap.get(userId)) {
+                userMap.get(userId).setVisible(true);
+            }
+        }
+    }
 }

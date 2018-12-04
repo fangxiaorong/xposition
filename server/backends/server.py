@@ -171,10 +171,13 @@ class ManagerGetLocations(web.RequestHandler):
 @app.route(r'/api/manager/track/(\d+)')
 class ManagerGetUserTrack(BaseHandler):
     def get(self, user_id):
+        start = int(self.get_argument('start', 0))
+        end = int(self.get_argument('end', 0))
+
         exam_id = table_manager(Exam).get_active_id()
         if exam_id:
             user_record = table_manager(UserRecord, str(exam_id), False)
-            points = user_record.query_records(int(user_id))
+            points = user_record.query_records(int(user_id), start=start / 1000.0, end=end / 1000.0)
 
             self.write(json.dumps({
                 'state': 1,

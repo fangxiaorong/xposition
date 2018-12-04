@@ -17,8 +17,8 @@ public class ServerRequest {
 
     String userId;
 //    String baseUrl = "http://10.0.108.155";
-    String baseUrl = "http://192.168.43.48";
-//    String baseUrl = "http://212.64.26.210";
+//    String baseUrl = "http://192.168.0.102";
+    String baseUrl = "http://212.64.26.210";
 
     public ServerRequest(Context context) {
         client = new OkHttpClient.Builder()
@@ -80,8 +80,9 @@ public class ServerRequest {
         client.newCall(request).enqueue(callback);
     }
 
-    public void managerGetUserTrack(int userId, Callback callback) {
-        Request request = new Request.Builder().url(baseUrl + "/api/manager/track/" + userId).build();
+    public void managerGetUserTrack(int userId, long startTime, long endTime, Callback callback) {
+        String params = "?start=" + startTime + "&end=" + endTime;
+        Request request = new Request.Builder().url(baseUrl + "/api/manager/track/" + userId + params).build();
         client.newCall(request).enqueue(callback);
     }
 
