@@ -84,6 +84,7 @@
             <v-divider class="mx-2" inset vertical></v-divider>
             <v-spacer></v-spacer>
             <input type="file" name="importuser" @change="handleFileChange" v-show="selected.state === 1">
+            <a href="/static/helpimport.html" target="_blank">导入文件说明</a>
           </v-toolbar>
           <v-data-table :headers="headers" :items="desserts" hide-actions>
             <template slot="items" slot-scope="props">
