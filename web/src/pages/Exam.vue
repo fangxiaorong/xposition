@@ -56,10 +56,10 @@
                         </v-flex>
 
                         <v-flex xs12 sm12 md6>
-                         <el-date-picker v-model="editedItem.starttime" type="datetime" placeholder="选择开始时间" />
+                         <el-date-picker v-model="editedItem.starttime" type="datetime" value-format="yyyy-MM-dd HH:mm:ss" format="yyyy-MM-dd HH:mm:ss" placeholder="选择开始时间" />
                         </v-flex>
                         <v-flex xs12 sm12 md6>
-                          <el-date-picker v-model="editedItem.endtime" type="datetime" placeholder="选择结束时间" />
+                          <el-date-picker v-model="editedItem.endtime" type="datetime" value-format="yyyy-MM-dd HH:mm:ss" format="yyyy-MM-dd HH:mm:ss" placeholder="选择结束时间" />
                         </v-flex>
 
                       </v-layout>
