@@ -34,6 +34,9 @@ public class PositionService extends Service implements AMapLocationListener, Ca
 
         AMapLocationClientOption option = new AMapLocationClientOption();
         option.setLocationMode(AMapLocationClientOption.AMapLocationMode.Hight_Accuracy);
+//        option.setLocationPurpose(AMapLocationClientOption.AMapLocationPurpose.SignIn);
+        option.setNeedAddress(false);
+        option.setGpsFirst(true);
 //        option.setOnceLocation(true);
 //        option.setOnceLocationLatest(true);
         option.setLocationCacheEnable(false);
@@ -57,7 +60,7 @@ public class PositionService extends Service implements AMapLocationListener, Ca
 
         Intent intent = new Intent(ACTION_LOCATION);
         if (aMapLocation != null) {
-            if (aMapLocation.getErrorCode() == 0) {
+            if (aMapLocation.getErrorCode() == 0 && aMapLocation.getAccuracy() <= 100 && aMapLocation.getLatitude() > 0 && aMapLocation.getLongitude() > 0) {
 //                && aMapLocation.getLocationQualityReport().getGPSStatus() == AMapLocationQualityReport.GPS_STATUS_OK) {
                 intent.putExtra("latitude", aMapLocation.getLatitude());
                 intent.putExtra("longitude", aMapLocation.getLongitude());

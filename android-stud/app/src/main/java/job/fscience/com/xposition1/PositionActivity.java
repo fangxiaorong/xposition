@@ -27,6 +27,7 @@ import com.amap.api.maps.CameraUpdate;
 import com.amap.api.maps.CameraUpdateFactory;
 import com.amap.api.maps.MapView;
 import com.amap.api.maps.model.*;
+import job.fscience.com.lib.LocationForegoundService;
 import job.fscience.com.server.PositionService;
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -41,11 +42,15 @@ public class PositionActivity extends AppCompatActivity {
 
     private AMap mMap;
     private LatLng mLatLng;
+    Intent serviceIntent = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_position);
+
+        serviceIntent = new Intent();
+        serviceIntent.setClass(this, LocationForegoundService.class);
 
         MapView mapView = (MapView) findViewById(R.id.map);
         mapView.onCreate(savedInstanceState);// 此方法必须重写
@@ -125,6 +130,9 @@ public class PositionActivity extends AppCompatActivity {
             unregisterReceiver(mBroadcastReceiver);
             mBroadcastReceiver = null;
         }
+        if (null != serviceIntent) {
+            startService(serviceIntent);
+        }
     }
 
     Marker positionMarker = null;
@@ -141,6 +149,8 @@ public class PositionActivity extends AppCompatActivity {
                     if (intent.getAction().equals(PositionService.ACTION_LOCATION)) {
                         if (intent.getIntExtra("state", -1) == 0) {
                             mLatLng = new LatLng(intent.getDoubleExtra("latitude", 0), intent.getDoubleExtra("longitude", 0));
+                            if (mLatLng.latitude <= 0 || mLatLng.longitude <= 0)
+                                return;
                             if (positionMarker == null) {
                                 positionMarker = showPoint(
                                         mLatLng,
@@ -153,7 +163,7 @@ public class PositionActivity extends AppCompatActivity {
                                         intent.getStringExtra("address"));
                             }
                             if (is_first_show) {
-                                CameraUpdate cameraUpdate = CameraUpdateFactory.newCameraPosition(new CameraPosition(positionMarker.getPosition(),14,0,0));
+                                CameraUpdate cameraUpdate = CameraUpdateFactory.newCameraPosition(new CameraPosition(positionMarker.getPosition(),mMap.getCameraPosition().zoom,0,0));
                                 mMap.animateCamera(cameraUpdate);
                                 is_first_show = false;
                             }

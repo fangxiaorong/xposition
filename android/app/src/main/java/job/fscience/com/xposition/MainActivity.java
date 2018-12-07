@@ -387,6 +387,7 @@ public class MainActivity extends BaseActivity implements CompoundButton.OnCheck
     private void unSelectUser(boolean clear) {
         if (polyline != null) {
             polyline.remove();
+            polyline = null;
         }
         stopPlay();
 
@@ -472,14 +473,20 @@ public class MainActivity extends BaseActivity implements CompoundButton.OnCheck
                         public void run() {
                             try {
                                 JSONArray points = object.getJSONArray("points");
-                                List<LatLng> latLngs = new ArrayList<>();
-                                for (int idx = 0; idx < points.size(); idx ++) {
-                                    JSONObject point = points.getJSONObject(idx);
-                                    latLngs.add(new LatLng(point.getDouble("latitude"), point.getDouble("longitude")));
+                                if (points.size() <= 2) {
+                                    showTextOnUIThread("选择时间段内无上报记录");
+                                } else {
+                                    List<LatLng> latLngs = new ArrayList<>();
+                                    for (int idx = 0; idx < points.size(); idx++) {
+                                        JSONObject point = points.getJSONObject(idx);
+                                        latLngs.add(new LatLng(point.getDouble("latitude"), point.getDouble("longitude")));
+                                    }
+                                    polyline = mMap.addPolyline(new PolylineOptions().
+                                            addAll(latLngs).width(10).color(Color.argb(255, 1, 1, 1)));
                                 }
-                                polyline = mMap.addPolyline(new PolylineOptions().
-                                        addAll(latLngs).width(10).color(Color.argb(255, 1, 1, 1)));
-                            } catch (Exception e) {}
+                            } catch (Exception e) {
+
+                            }
                         }
                     });
                 } else {
