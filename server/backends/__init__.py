@@ -429,6 +429,9 @@ class UserRecord(BaseTable):
         ''' % self._table);
 
     def add_record(self, user_id, latitude, longitude, manual=0):
+        if latitude <= 0 or longitude <= 0:
+            return
+
         key = self.record_prefix + str(user_id)
 
         info = r_conn.hget(self.active_user_info_key, user_id)

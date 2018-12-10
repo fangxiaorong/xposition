@@ -57,10 +57,12 @@ public class PositionService extends Service implements AMapLocationListener, Ca
     @Override
     public void onLocationChanged(AMapLocation aMapLocation) {
         System.out.println("location callback" + aMapLocation);
+        System.out.println(aMapLocation.getAccuracy());
 
         Intent intent = new Intent(ACTION_LOCATION);
         if (aMapLocation != null) {
-            if (aMapLocation.getErrorCode() == 0 && aMapLocation.getAccuracy() <= 100 && aMapLocation.getLatitude() > 0 && aMapLocation.getLongitude() > 0) {
+
+            if (aMapLocation.getErrorCode() == 0 && aMapLocation.getAccuracy() <= 300 && aMapLocation.getLatitude() > 0 && aMapLocation.getLongitude() > 0) {
 //                && aMapLocation.getLocationQualityReport().getGPSStatus() == AMapLocationQualityReport.GPS_STATUS_OK) {
                 intent.putExtra("latitude", aMapLocation.getLatitude());
                 intent.putExtra("longitude", aMapLocation.getLongitude());

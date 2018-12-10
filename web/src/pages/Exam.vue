@@ -49,10 +49,10 @@
                           <v-text-field v-model="editedItem.score2" label="良好"></v-text-field>
                         </v-flex>
                         <v-flex xs12 sm6 md3>
-                          <v-text-field v-model="editedItem.score3" label="及格"></v-text-field>
+                          <v-text-field v-model="editedItem.score3" label="合格"></v-text-field>
                         </v-flex>
                         <v-flex xs12 sm6 md3>
-                          <v-text-field v-model="editedItem.score4" label="得分"></v-text-field>
+                          <v-text-field v-model="editedItem.score4" label="不合格"></v-text-field>
                         </v-flex>
 
                         <v-flex xs12 sm12 md6>
