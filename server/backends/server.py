@@ -472,18 +472,6 @@ class AdminExamLine(BaseHandler):
             }))
             return
 
-        from  decimal import Decimal
-        tmp = 0
-        for point in json.loads(points):
-            tmp += Decimal(point.get('weight')) if point.get('weight') else Decimal(0)
-        print(tmp)
-        if tmp != Decimal(1.0):
-            self.write(json.dumps({
-                'state': 4,
-                'message': '权重设置错误！'
-            }))
-            return
-
         with CursorManager() as cursor:
             exam_line = table_manager(ExamLine)
 
@@ -493,6 +481,20 @@ class AdminExamLine(BaseHandler):
                 if name is not None:
                     kwargs.update({'name': name})
                 if points is not None:
+                    # check weight
+                    from  decimal import Decimal
+                    tmp = 0
+                    for point in json.loads(points):
+                        tmp += Decimal(point.get('weight')) if point.get('weight') else Decimal(0)
+                    print(tmp)
+                    if tmp != Decimal(1.0):
+                        self.write(json.dumps({
+                            'state': 4,
+                            'message': '权重设置错误！'
+                        }))
+                        return
+                    # end check
+                    
                     kwargs.update({'points': points})
                 if valid is not None:
                     kwargs.update({'valid': valid})
