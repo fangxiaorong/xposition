@@ -349,12 +349,14 @@ public class MainActivity extends BaseActivity implements CompoundButton.OnCheck
         for (int idx = 0; idx < points.size(); idx ++) {
             JSONObject point = points.getJSONObject(idx);
 
-            markManager.updateUser(
-                    point.getInteger("user_id"),
-                    point.getString("username"),
-                    point.getDouble("latitude"),
-                    point.getDouble("longitude"),
-                    point.getInteger("state"));
+            if (point.containsKey("latitude") && point.containsKey("longitude")) {
+                markManager.updateUser(
+                        point.getInteger("user_id"),
+                        point.getString("username"),
+                        point.getDouble("latitude"),
+                        point.getDouble("longitude"),
+                        point.getInteger("state"));
+            }
         }
     }
 
