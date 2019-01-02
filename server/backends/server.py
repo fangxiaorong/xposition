@@ -91,6 +91,78 @@ class UserLogin(BaseHandler):
                 'message': '暂未设置考试'
             }))
 
+@app.route(r'/api/user/autologin')
+class UserAutoLogin(BaseHandler):
+    def get(self):
+        device_id = self.get_argument('device_id')
+        exam = table_manager(Exam)
+        active_id = exam.get_active_id()
+        if active_id >= 0:
+            with CursorManager() as cursor:
+                exam_user = table_manager(ExamUser)
+                users = exam_user.query_records(cursor, device_id=device_id, exam_id=active_id)
+                if users:
+                    self.write(json.dumps({
+                        'state': 1,
+                        'message': '成功',
+                        'user': users[0]
+                    }))
+                else:
+                    self.write(json.dumps({
+                        'state': 10,
+                        'message': '用户未找到'
+                    }))
+        else:
+            self.write(json.dumps({
+                'state': 3,
+                'message': '暂未设置考试'
+            }))
+
+    def post(self):
+        device_id = self.get_argument('device_id')
+        line_id = self.get_argument('line_id')
+        username = self.get_argument('username')
+        departname = self.get_argument('departname')
+
+        active_id = table_manager(Exam).get_active_id()
+        if active_id >= 0:
+            with CursorManager() as cursor:
+                exam_user = table_manager(ExamUser)
+                users = exam_user.query_records(cursor, device_id=device_id, exam_id=active_id)
+                if users:
+                    self.write(json.dumps({
+                        'state': 10,
+                        'message': '用户已存在'
+                    }))
+                else:
+                    user = {
+                        'exam_id': active_id,
+                        'line_id': int(line_id),
+                        'device_id': device_id,
+                        'username': username,
+                        'departname': departname,
+                    }
+                    exam_user.new_record(cursor, user)
+
+                    users = exam_user.query_records(cursor, device_id=device_id, exam_id=active_id)
+                    if users:
+                        self.write(json.dumps({
+                            'state': 1,
+                            'message': '成功',
+                            'user': users[0]
+                        }))
+                    else:
+                        self.write(json.dumps({
+                            'state': 4,
+                            'message': '用户创建失败'
+                        }))
+        else:
+            self.write(json.dumps({
+                'state': 3,
+                'message': '暂未设置考试'
+            }))
+
+
 @app.route(r'/api/user/position')
 class UserUploadPosition(web.RequestHandler):
     def post(self):
@@ -244,9 +316,12 @@ class ManagerUserResults(web.RequestHandler):
         level4 = self.get_argument('level4', 0)
 
         data = ExamCalculate.calculate_all(float(level1), float(level2), float(level3), float(level4))
+        users = data.get('users')
+        users.sort(key=lambda user: user['total_score'], reverse=True)
         data.update({
             'state': 1,
             'message': '成功',
+            'users': users
         })
         self.write(json.dumps(data))
 
@@ -402,20 +477,57 @@ class AdminGetExamUser(BaseHandler):
                 'users': exam_user_infos,
             }));
 
+    # @auth_check
+    # def post(self, exam_id):
+    #     exam_users = self.get_argument('exam_users', None)
+
+    #     if exam_users and exam_id:
+    #         exam_users = json.loads(exam_users)
+    #         with CursorManager() as cursor:
+    #             exam_user = table_manager(ExamUser)
+    #             exam_user.delete_record(cursor, exam_id=exam_id)
+    #             exam_user.import_records(cursor, exam_users)
+
+    #         self.write(json.dumps({
+    #             'state': 1,
+    #             'message': '成功',
+    #         }))
+    #     else:
+    #         self.write(json.dumps({
+    #             'state': 10,
+    #             'message': '失败'
+    #         }))
+
     @auth_check
     def post(self, exam_id):
-        exam_users = self.get_argument('exam_users', None)
+        exam_user_info = self.get_argument('exam_user', None)
 
-        if exam_users and exam_id:
-            exam_users = json.loads(exam_users)
+        if exam_user_info and exam_id:
+            exam_user_info = json.loads(exam_user_info)
             with CursorManager() as cursor:
                 exam_user = table_manager(ExamUser)
-                exam_user.delete_record(cursor, exam_id=exam_id)
-                exam_user.import_records(cursor, exam_users)
+                update_user_info = {
+                    'exam_id': exam_user_info.get('exam_id'),
+                    'line_id': exam_user_info.get('line_id'),
+                    'device_id': exam_user_info.get('device_id'),
+                    'username': exam_user_info.get('username'),
+                    'departname': exam_user_info.get('departname'),
+                    'score': exam_user_info.get('score')
+                }
+                exam_user.update_record(cursor, exam_user_info.get('id'), **update_user_info)
+                # exam_user_infos = exam_user.query_records(cursor, exam_id=exam_id)
+                # for item in exam_user_infos:
+                #     if item.get('device_id') == exam_user_info.get('device_id'):
+                #         item.update(exam_user_info)
+                #         break
+                #         print(exam_user_infos, exam_user_info)
+                # exam_user.delete_record(cursor, exam_id=exam_id)
+                # exam_user.import_records(cursor, exam_users)
 
             self.write(json.dumps({
                 'state': 1,
                 'message': '成功',
+                'user_info': exam_user_info
             }))
         else:
             self.write(json.dumps({
@@ -425,7 +537,7 @@ class AdminGetExamUser(BaseHandler):
 
 @app.route(r'/api/admin/examline/list')
 class AdminGetExamLines(BaseHandler):
-    @auth_check
+    # @auth_check
     def get(self):
         valid = self.get_argument('valid', None)
 
@@ -494,7 +606,7 @@ class AdminExamLine(BaseHandler):
                         }))
                         return
                     # end check
-                    
+
                     kwargs.update({'points': points})
                 if valid is not None:
                     kwargs.update({'valid': valid})

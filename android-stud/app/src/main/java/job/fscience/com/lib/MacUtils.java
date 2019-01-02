@@ -13,8 +13,11 @@ import java.io.InputStreamReader;
 import java.io.LineNumberReader;
 import java.io.Reader;
 import java.net.NetworkInterface;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * author : HLQ
@@ -73,7 +76,37 @@ public class MacUtils {
         } else { // 当前设备在6.0以下
             return getAndroidLowVersionMac(mWifiManager);
         }
-//        return "A8:0C:63:26:ED:EB";
+    }
+
+    public static String getSafeMobileMac(Context context) {
+        String mac = getMobileMAC(context);
+        if (mac.equals(ERROR_MAC_STR)) {
+            mac = UUID.randomUUID().toString();
+        }
+        return md5(mac);
+    }
+
+    public static String md5(String string) {
+        if (TextUtils.isEmpty(string)) {
+            return "";
+        }
+        MessageDigest md5 = null;
+        try {
+            md5 = MessageDigest.getInstance("MD5");
+            byte[] bytes = md5.digest(string.getBytes());
+            String result = "";
+            for (byte b : bytes) {
+                String temp = Integer.toHexString(b & 0xff);
+                if (temp.length() == 1) {
+                    temp = "0" + temp;
+                }
+                result += temp;
+            }
+            return result;
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+        return "";
     }
 
     /**

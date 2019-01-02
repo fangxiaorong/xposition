@@ -23,7 +23,7 @@
                 </v-list-tile-avatar>
 
               </v-list-tile>
-              <v-dialog v-model="dialog" max-width="800px">
+              <v-dialog v-model="examDialog" max-width="800px">
                 <v-btn slot="activator" color="primary" dark class="mb-2">新增</v-btn>
                 <v-card>
                   <v-card-title>
@@ -34,32 +34,26 @@
                       <v-layout wrap>
                         <!-- <v-text-field v-model="examname" label="考试名称"></v-text-field> -->
                         <v-flex xs12 sm12 md12>
-                          <v-text-field v-model="editedItem.name" label="考试名称" :readonly="editedItem.id>=0"></v-text-field>
-                        </v-flex>
-                        <!-- <v-flex xs12 sm12 md3>
-                          <v-text-field v-model="editedItem.starttime" label="开始时间(1999-10-10 12:12:12)"></v-text-field>
-                        </v-flex>
-                        <v-flex xs12 sm12 md3>
-                          <v-text-field v-model="editedItem.endtime" label="结束时间(1999-10-10 12:12:12)"></v-text-field>
-                        </v-flex> -->
-                        <v-flex xs12 sm6 md3>
-                          <v-text-field v-model="editedItem.score1" label="优秀"></v-text-field>
+                          <v-text-field v-model="editedExamItem.name" label="考试名称" :readonly="editedExamItem.id>=0"></v-text-field>
                         </v-flex>
                         <v-flex xs12 sm6 md3>
-                          <v-text-field v-model="editedItem.score2" label="良好"></v-text-field>
+                          <v-text-field v-model="editedExamItem.score1" label="优秀"></v-text-field>
                         </v-flex>
                         <v-flex xs12 sm6 md3>
-                          <v-text-field v-model="editedItem.score3" label="合格"></v-text-field>
+                          <v-text-field v-model="editedExamItem.score2" label="良好"></v-text-field>
                         </v-flex>
                         <v-flex xs12 sm6 md3>
-                          <v-text-field v-model="editedItem.score4" label="不合格"></v-text-field>
+                          <v-text-field v-model="editedExamItem.score3" label="合格"></v-text-field>
+                        </v-flex>
+                        <v-flex xs12 sm6 md3>
+                          <v-text-field v-model="editedExamItem.score4" label="不合格"></v-text-field>
                         </v-flex>
 
                         <v-flex xs12 sm12 md6>
-                         <el-date-picker v-model="editedItem.starttime" type="datetime" value-format="yyyy-MM-dd HH:mm:ss" format="yyyy-MM-dd HH:mm:ss" placeholder="选择开始时间" />
+                         <el-date-picker v-model="editedExamItem.starttime" type="datetime" value-format="yyyy-MM-dd HH:mm:ss" format="yyyy-MM-dd HH:mm:ss" placeholder="选择开始时间" />
                         </v-flex>
                         <v-flex xs12 sm12 md6>
-                          <el-date-picker v-model="editedItem.endtime" type="datetime" value-format="yyyy-MM-dd HH:mm:ss" format="yyyy-MM-dd HH:mm:ss" placeholder="选择结束时间" />
+                          <el-date-picker v-model="editedExamItem.endtime" type="datetime" value-format="yyyy-MM-dd HH:mm:ss" format="yyyy-MM-dd HH:mm:ss" placeholder="选择结束时间" />
                         </v-flex>
 
                       </v-layout>
@@ -82,30 +76,51 @@
             <!--  + '(' + (selected.starttime === undefined ? '时间未设置' : (selected.starttime + '-' + selected.endtime)) + ')' -->
             <v-toolbar-title>{{ selected.name + ' -- [ 优秀(' + selected.score1 + ') 良好(' + selected.score2 + ') 及格(' + selected.score3 + ') 得分(' + selected.score4 + ') ]'}}</v-toolbar-title>
             <v-divider class="mx-2" inset vertical></v-divider>
-            <v-spacer></v-spacer>
+            <!-- <v-spacer></v-spacer>
             <input type="file" name="importuser" @change="handleFileChange" v-show="selected.state === 1">
-            <a href="/static/helpimport.html" target="_blank">导入文件说明</a>
+            <a href="/static/helpimport.html" target="_blank">导入文件说明</a> -->
           </v-toolbar>
-          <v-data-table :headers="headers" :items="desserts" hide-actions>
+          <v-data-table :headers="selected.state===1 ? headers : headers.slice(0, headers.length-1)" :items="desserts" hide-actions>
             <template slot="items" slot-scope="props">
               <td>{{ props.item.exam_id }}</td>
               <td v-if="selected.state === 1">
-                <v-select :items="lines" v-model="props.item.line_id" item-text="name" item-value="id"></v-select>
+               <!--  <v-select :items="lines" v-model="props.item.line_id" item-text="name" item-value="id"></v-select> -->
+               {{ lineMap[props.item.line_id].name }}
               </td>
               <td v-else>{{ props.item.line ? props.item.line.name : props.item.line_id }}</td>
               <td>{{ props.item.username }}</td>
               <td>{{ props.item.device_id }}</td>
               <td>{{ props.item.departname }}</td>
-              <td>
+              <td v-show="selected.id === active_exam_id">
+                <v-icon small class="mr-2" @click="editUserItem(props.item)">edit</v-icon>
               </td>
             </template>
             <template slot="no-data">
               <div></div>
             </template>
           </v-data-table>
-          <div class="text-xs-right">
+          <!-- <div class="text-xs-right">
             <v-btn color="primary" @click="saveExamUser" v-show="desserts.length > 0 && selected.state === 1">保存</v-btn>
-          </div>
+          </div> -->
+
+          <v-dialog v-model="userDialog" max-width="800px">
+            <v-card>
+              <v-card-title>
+                <span class="headline">修改用户信息 ({{ editedUserItem.device_id }})</span>
+              </v-card-title>
+              <v-card-text>
+                <v-text-field label="姓名" v-model="editedUserItem.username"></v-text-field>
+                <v-text-field label="所属单位" v-model="editedUserItem.departname"></v-text-field>
+                <v-select :items="lines" v-model="editedUserItem.line_id" item-text="name" item-value="id"></v-select>
+              </v-card-text>
+              <v-card-actions>
+                <v-spacer></v-spacer>
+                <v-btn color="blue darken-1" flat @click.native="exitUser">取消</v-btn>
+                <v-btn color="blue darken-1" flat @click.native="saveUser">保存</v-btn>
+              </v-card-actions>
+            </v-card>
+          </v-dialog>
+
         </v-flex>
       </v-layout>
     </v-container>
@@ -121,17 +136,20 @@ export default {
     exams: [],
     active_exam_id: -1,
     lines: [],
-    dialog: false,
+    lineMap: {},
+    examDialog: false,
+    userDialog: false,
     headers: [
       { text: '考试号', value: 'name', sortable: false, align: 'left' },
       { text: '路线号', value: 'calories', sortable: false },
       { text: '姓名', value: 'fat', sortable: false },
       { text: '设备号', value: 'carbs', sortable: false },
       { text: '所属单位', value: 'carbs', sortable: false },
+      { text: '动作', value: 'name', sortable: false }
     ],
     desserts: [],
-    editedIndex: -1,
-    editedItem: {
+    editedExamIndex: -1,
+    editedExamItem: {
       id: -1,
       name: '',
       score1: 0,
@@ -141,7 +159,7 @@ export default {
       starttime: '',
       endtime: ''
     },
-    defaultItem: {
+    defaultExamItem: {
       id: -1,
       name: '',
       score1: 0,
@@ -150,11 +168,12 @@ export default {
       score4: 0,
       starttime: '',
       endtime: ''
-    }
+    },
+    editedUserItem: {}
   }),
   computed: {
     formTitle () {
-      return this.editedIndex === -1 ? 'New Item' : 'Edit Item';
+      return this.editedExamIndex === -1 ? 'New Item' : 'Edit Item';
     },
   },
   watch: {
@@ -178,37 +197,37 @@ export default {
         }
 
         if (lines_resp.data.state === 1) {
-          // let lines = {};
-          // lines_resp.data.exam_line.forEach((line) => {
-          //   lines[line.id] = line;
-          // });
           that.lines = lines_resp.data.exam_line;
+          that.lineMap = {};
+          that.lines.forEach(item => {
+            that.lineMap[item.id] = item;
+          });
         }
       }));
     },
     close () {
-      this.dialog = false;
+      this.examDialog = false;
       setTimeout(() => {
-        this.editedItem = Object.assign({}, this.defaultItem);
-        this.editedIndex = -1;
+        this.editedExamItem = Object.assign({}, this.defaultExamItem);
+        this.editedExamIndex = -1;
       }, 300);
     },
     newExam () {
-      if (this.editedItem.name.trim() === '') {
+      if (this.editedExamItem.name.trim() === '') {
         alert('名字不能为空！');
-      } else if (this.editedItem.starttime.trim() === '' || this.editedItem.endtime.trim() === '') {
+      } else if (this.editedExamItem.starttime.trim() === '' || this.editedExamItem.endtime.trim() === '') {
         alert('起止时间必须设置');
       } else {
-        let data = 'name=' + encodeURI(this.editedItem.name.trim()) +
-                   '&score1=' + this.editedItem.score1 +
-                   '&score2=' + this.editedItem.score2 + 
-                   '&score3=' + this.editedItem.score3 +
-                   '&score4=' + this.editedItem.score4 +
-                   '&starttime=' + this.editedItem.starttime +
-                   '&endtime=' + this.editedItem.endtime;
-        if (this.editedIndex > -1) {
-          // Object.assign(this.desserts[this.editedIndex], this.editedItem);
-          data = data + '&exam_id=' + this.editedItem.id;
+        let data = 'name=' + encodeURI(this.editedExamItem.name.trim()) +
+                   '&score1=' + this.editedExamItem.score1 +
+                   '&score2=' + this.editedExamItem.score2 + 
+                   '&score3=' + this.editedExamItem.score3 +
+                   '&score4=' + this.editedExamItem.score4 +
+                   '&starttime=' + this.editedExamItem.starttime +
+                   '&endtime=' + this.editedExamItem.endtime;
+        if (this.editedExamIndex > -1) {
+          // Object.assign(this.desserts[this.editedExamIndex], this.editedExamItem);
+          data = data + '&exam_id=' + this.editedExamItem.id;
           this.axios.post('/api/admin/exam', data).then((response) => {
             console.log(response);
             if (response.data.state === 1) {
@@ -243,9 +262,9 @@ export default {
       });
     },
     editExam (item) {
-      this.editedIndex = this.exams.indexOf(item);
-      this.editedItem = Object.assign({}, item);
-      this.dialog = true;
+      this.editedExamIndex = this.exams.indexOf(item);
+      this.editedExamItem = Object.assign({}, item);
+      this.examDialog = true;
     },
     handleFileChange (event) {
       if (typeof (FileReader) !== 'undefined') {
@@ -310,6 +329,28 @@ export default {
     saveExamUser () {
       this.axios.post('/api/admin/examuser/list/' + this.selected.id, 'exam_users=' + encodeURI(JSON.stringify(this.desserts))).then((response) => {
         if (response.data.state === 1) {
+          window.alert('保存成功');
+        } else {
+          window.alert(response.data.message);
+        }
+      });
+    },
+    editUserItem (item) {
+      this.editedUserItem = Object.assign({}, item);
+      this.userDialog = true;
+    },
+    exitUser () {
+      this.userDialog = false;
+    },
+    saveUser () {
+      this.axios.post('/api/admin/examuser/list/' + this.selected.id, 'exam_user=' + encodeURI(JSON.stringify(this.editedUserItem))).then((response) => {
+        if (response.data.state === 1) {
+          this.desserts.forEach(item => {
+            if (item.id === response.data.user_info.id) {
+              Object.assign(item, response.data.user_info);
+            }
+          });
+          this.userDialog = false;
           window.alert('保存成功');
         } else {
           window.alert(response.data.message);

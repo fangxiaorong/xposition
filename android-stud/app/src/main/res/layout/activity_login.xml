@@ -9,23 +9,76 @@
             android:scaleType="centerCrop"
             android:layout_width="match_parent"
             android:layout_height="match_parent"/>
-    <TextView
-            android:text="@string/app_name"
-            android:textColor="@android:color/white"
-            android:textSize="38sp"
-            android:paddingBottom="120sp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_centerInParent="true"/>
-
-    <TextView
-            android:id="@+id/user_id"
-            android:text="9944saadff"
-            android:textColor="@android:color/white"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+    <LinearLayout
             android:layout_centerInParent="true"
-            android:textAppearance="@style/TextAppearance.AppCompat.Large"/>
+            android:gravity="center"
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+        <TextView
+                android:text="@string/app_name"
+                android:textColor="@android:color/white"
+                android:textSize="38sp"
+                android:paddingBottom="20sp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+
+        <TextView
+                android:id="@+id/user_id"
+                android:text="9944saadff"
+                android:textColor="@android:color/white"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textAppearance="@style/TextAppearance.AppCompat.Large"/>
+        <LinearLayout
+                android:padding="20dp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+            <TextView
+                    android:layout_width="60sp"
+                    android:layout_height="wrap_content"
+                    android:textColor="@android:color/white"
+                    android:text="姓名"/>
+            <EditText
+                    android:id="@+id/username"
+                    android:textColor="@android:color/white"
+                    android:layout_width="match_parent"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"/>
+        </LinearLayout>
+        <LinearLayout
+                android:padding="20dp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+            <TextView
+                    android:layout_width="60sp"
+                    android:layout_height="wrap_content"
+                    android:textColor="@android:color/white"
+                    android:text="单位"/>
+            <EditText
+                    android:id="@+id/departname"
+                    android:textColor="@android:color/white"
+                    android:layout_width="match_parent"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"/>
+        </LinearLayout>
+        <LinearLayout
+                android:padding="20dp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+            <TextView
+                    android:layout_width="60sp"
+                    android:layout_height="wrap_content"
+                    android:textColor="@android:color/white"
+                    android:text="线路"/>
+            <Spinner
+                    android:id="@+id/line"
+                    android:textColor="@android:color/white"
+                    android:layout_width="match_parent"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"/>
+        </LinearLayout>
+    </LinearLayout>
 
     <TextView
             android:id="@+id/login"

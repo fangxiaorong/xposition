@@ -10,15 +10,31 @@ public class ServerRequest {
     OkHttpClient client = new OkHttpClient();
 
     String userId;
-//    String baseUrl = "http://192.168.0.102";
-    String baseUrl = "http://212.64.26.210";
+    String baseUrl = "http://10.253.102.55";
+//    String baseUrl = "http://212.64.26.210";
 
     public ServerRequest(Context context) {
         userId = MacUtils.getMobileMAC(context);
     }
 
-    public void userLogin(String deviceId, Callback callback) {
-        Request request = new Request.Builder().url(baseUrl + "/api/user/login/" + deviceId).build();
+    public void checkLogin(String deviceId, Callback callback) {
+        Request request = new Request.Builder().url(baseUrl + "/api/user/autologin?device_id=" + deviceId).build();
+        client.newCall(request).enqueue(callback);
+    }
+
+    public void userLogin(String deviceId, String lineId, String userName, String departName, Callback callback) {
+        RequestBody body = new FormBody.Builder()
+                .add("device_id", deviceId)
+                .add("line_id", "" + lineId)
+                .add("username", "" + userName)
+                .add("departname", "" + departName).build();
+
+        Request request = new Request.Builder().url(baseUrl + "/api/user/autologin").post(body).build();
+        client.newCall(request).enqueue(callback);
+    }
+
+    public void userLines(Callback callback) {
+        Request request = new Request.Builder().url(baseUrl + "/api/admin/examline/list").build();
         client.newCall(request).enqueue(callback);
     }
 

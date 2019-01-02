@@ -195,9 +195,11 @@ class BaseTable(object):
         try:
             values = [v for v in kwargs.values()]
             values.append(record_id)
+            print(sql_str, values)
             cursor.execute(sql_str, tuple(values))
             cursor.connection.commit()
         except Exception as e:
+            print(e)
             result = sql_result_map.get(e.args[0].split(':')[0])
             if not result:
                 result = (100, '失败')
@@ -328,6 +330,17 @@ class ExamUser(BaseTable):
         exem_detail_users = self._query_record(cursor, ('id', 'username', 'departname', 'detail'), **kwargs)
 
         return exem_detail_users
+
+    def new_record(self, cursor, user):
+        user_info = {
+            'exam_id': user.get('exam_id'),
+            'line_id': user.get('line_id'),
+            'device_id': user.get('device_id'),
+            'username': user.get('username'),
+            'departname': user.get('departname'),
+            'create_time': datetime.now().isoformat(),
+        }
+        return self._new_record(cursor, **user_info)
 
     def delete_record(self, cursor, exam_id):
         return self._delete_record(cursor, exam_id=exam_id)
