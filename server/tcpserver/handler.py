@@ -76,3 +76,18 @@ class TimeSyncHandler(object):
         data = struct.pack('!LH', int(datetime.datetime.utcnow().timestamp()), 0)
         return Message(TimeSyncHandler.MSG_TYPE, serial, data)
 
+class CheckInOutHandler(object):
+    MSG_TYPE = 0xB0
+    def __init__(self, arg):
+        super(CheckInOutHandler, self).__init__()
+    
+    def handler(self, device, message, serial):
+        year, month, day, hour, minute, second, gps_fix, reserve, gps_num, longtitude, latitude, speed = struct.unpack('!BBBBBBBHBffB', message[:19])
+        date_time = '%d-%d-%d %d:%d:%d' % (year + 2000, month, day, hour, minute, second)
+
+        print('check time', date_time)
+        print('reserve', reserve)
+
+        data = struct.pack('!LBBH', int(datetime.datetime.utcnow().timestamp()), 1, 1, reserve)
+        return Message(CheckInOutHandler.MSG_TYPE, serial, data)
+

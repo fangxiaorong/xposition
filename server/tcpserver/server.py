@@ -106,5 +106,6 @@ class GPSServer(TCPServer):
             handler.GPSInfoHandler.MSG_TYPE: handler.GPSInfoHandler(),
             handler.HeartHandler.MSG_TYPE: handler.HeartHandler(),
             handler.TimeSyncHandler.MSG_TYPE: handler.TimeSyncHandler(),
+            handler.CheckInOutHandler.MSG_TYPE: handler.CheckInOutHandler(),
         })
 
