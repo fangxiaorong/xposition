@@ -33,18 +33,18 @@ class GPSInfoHandler(object):
         super(GPSInfoHandler, self).__init__()
     
     def handler(self, device, message, serial):
-        year, month, day, hour, minute, second, gps_info, longtitude, latitude, speed, gps_state = struct.unpack('!BBBBBBBLLBH', message)
+        year, month, day, hour, minute, second, gps_info, longitude, latitude, speed, gps_state = struct.unpack('!BBBBBBBLLBH', message)
         date_time = '%d-%d-%d %d:%d:%d' % (year + 2000, month, day, hour, minute, second)
-        longtitude = longtitude / 30000
-        longtitude = '%dº%f‘' % (longtitude // 60, longtitude % 60)
+        longitude = longitude / 30000
+        longitude = '%dº%f‘' % (longitude // 60, longitude % 60)
         latitude = latitude / 30000
-        latitude = '%dº%f‘' % (longtitude // 60, longtitude % 60)
+        latitude = '%dº%f‘' % (longitude // 60, longitude % 60)
 
-        device.longtitude = longtitude
+        device.longitude = longitude
         device.latitude = latitude
         device.speed = speed
 
-        print('receive gps', date_time, longtitude, latitude, speed)
+        print('receive gps', date_time, longitude, latitude, speed)
 
 class HeartHandler(object):
     MSG_TYPE = 0x13
@@ -82,12 +82,19 @@ class CheckInOutHandler(object):
         super(CheckInOutHandler, self).__init__()
     
     def handler(self, device, message, serial):
-        year, month, day, hour, minute, second, gps_fix, reserve, gps_num, longtitude, latitude, speed = struct.unpack('!BBBBBBBHBffB', message[:19])
+        year, month, day, hour, minute, second, gps_fix, reserve, gps_num, longitude, latitude, speed = struct.unpack('!BBBBBBBHBLLB', message[:19])
         date_time = '%d-%d-%d %d:%d:%d' % (year + 2000, month, day, hour, minute, second)
+
+        longitude = longitude / 30000
+        longitude = '%dº%f‘' % (longitude // 60, longitude % 60)
+        latitude = latitude / 30000
+        latitude = '%dº%f‘' % (longitude // 60, longitude % 60)
 
         print('check time', date_time)
         print('reserve', reserve)
+        print('gps:', gps_num, latitude, longitude, speed)
 
-        data = struct.pack('!LBBH', int(datetime.datetime.utcnow().timestamp()), 1, 1, reserve)
+        date = datetime.datetime.now()
+        data = struct.pack('!BBBBBBBBH', date.year - 2000, date.month, date.day, date.hour, date.minute, date.second, 1, 1, reserve)
         return Message(CheckInOutHandler.MSG_TYPE, serial, data)
 
