@@ -78,7 +78,7 @@ class TimeSyncHandler(object):
 
 class CheckInOutHandler(object):
     MSG_TYPE = 0xB0
-    def __init__(self, arg):
+    def __init__(self):
         super(CheckInOutHandler, self).__init__()
     
     def handler(self, device, message, serial):
