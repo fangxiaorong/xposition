@@ -38,7 +38,7 @@ class GPSInfoHandler(object):
         longitude = longitude / 30000
         longitude = '%dº%f‘' % (longitude // 60, longitude % 60)
         latitude = latitude / 30000
-        latitude = '%dº%f‘' % (longitude // 60, longitude % 60)
+        latitude = '%dº%f‘' % (latitude // 60, latitude % 60)
 
         device.longitude = longitude
         device.latitude = latitude
@@ -88,7 +88,7 @@ class CheckInOutHandler(object):
         longitude = longitude / 30000
         longitude = '%dº%f‘' % (longitude // 60, longitude % 60)
         latitude = latitude / 30000
-        latitude = '%dº%f‘' % (longitude // 60, longitude % 60)
+        latitude = '%dº%f‘' % (latitude // 60, latitude % 60)
 
         print('check time', date_time)
         print('reserve', reserve)
