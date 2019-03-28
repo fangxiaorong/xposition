@@ -6,6 +6,26 @@ import struct
 from libs import crc_encode
 
 
+# FORMAT  C TYPE  PYTHON TYPE STANDARD SIZE   NOTES
+# x   pad byte    no value         
+# c   char    string of length 1  1    
+# b   signed char integer 1   (3)
+# B   unsigned char   integer 1   (3)
+# ?   _Bool   bool    1   (1)
+# h   short   integer 2   (3)
+# H   unsigned short  integer 2   (3)
+# i   int integer 4   (3)
+# I   unsigned int    integer 4   (3)
+# l   long    integer 4   (3)
+# L   unsigned long   integer 4   (3)
+# q   long long   integer 8   (2), (3)
+# Q   unsigned long long  integer 8   (2), (3)
+# f   float   float   4   (4)
+# d   double  float   8   (4)
+# s   char[]  string       
+# p   char[]  string       
+# P   void *  integer     (5), (3)
+
 class Message(object):
     MSG_CLEAN = 1
     MSG_PART = 2
@@ -71,3 +91,38 @@ class Message(object):
 
     def get_state(self):
         return self._state
+
+
+class MessageManager(object):
+    FREE_IDS = [1 if item == 0 else item + 1 for item in range(255)]
+
+    def __init__(self):
+        super(MessageManager, self).__init__()
+        self._message = Message()
+        self._id = self._get_free_id()
+
+    def _get_free_id(self):
+        free_id = MessageManager.FREE_IDS[0]
+        MessageManager.FREE_IDS[0] = MessageManager.FREE_IDS[free_id]
+
+        return free_id
+
+    def add_read_data(self, data):
+        if self._message.get_state() == Message.MSG_CLEAN: # 读取新消息
+            self._message.update_data(data)
+        elif self._message.get_state() == Message.MSG_PART: # 读取剩余部分消息
+            self._message.append_data(data)
+        else: # 错误
+            pass
+
+        return self._message
+    
+    def create_message(self, msg_type, data):
+        _data = struct.pack(('!bI%ds' % len(data)), len(data) + 4, self._id, data)
+
+        return Message(msg_type, b'\x00\x01', _data)
+
+    def free(self):
+        MessageManager.FREE_IDS[self._id] = MessageManager.FREE_IDS[0]
+        MessageManager.FREE_IDS[0] = self._id
+

@@ -1,11 +1,10 @@
 #!/usr/bin/python
 #coding:utf-8
 
-from queue import Queue
-
 from tornado.tcpserver import TCPServer
+from tornado.ioloop import IOLoop
 
-from tcpserver.message import Message
+from tcpserver.message import Message, MessageManager
 from tcpserver.device import DeviceInfo
 
 class Connection(object):
@@ -15,11 +14,20 @@ class Connection(object):
         Connection.clients.add(self)
         self._stream = stream
         self._address = address
+        self._message = MessageManager()
         self._stream.set_close_callback(self.on_close)
         print("A new user has entered the chat room.", self._address)
 
+    def resolve_data(self, data):
+        return self._message.add_read_data(data)
+
+    def create_message(self, msg_type, data):
+        return self._message.create_message(msg_type, data)
+
     def on_close(self):
         print("A user has left the chat room.", self._address)
+        self._stream = None
+        self._message.free()
         Connection.clients.remove(self)
 
 class RobotConnection(Connection):
@@ -27,53 +35,43 @@ class RobotConnection(Connection):
 
     def __init__(self, stream, address):
         super(RobotConnection, self).__init__(stream, address)
-        self._send_array = Queue()
-        self._sending_message = None
-        self._message = Message()
+        self._send_array = []
         self._device = DeviceInfo()
-        self._connect_loop()
+        self._handler()
 
-    def _connect_loop(self):
-        is_sync = True
-
-        if self._message.get_state() == Message.MSG_PART: # 读取完整消息
-            self._read_data()
-            is_sync = False
-        elif self._message.get_state() == Message.MSG_FULL: # 完整消息处理
-            if self._sending_message:
-                self._sending_handler(self._message, self._sending_message)
-                self._sending_message = None
-            else:
-                self._message_handler(self._message)
-            # 处理完消息后，重置消息
-            self._message.clean()
-        elif self._message.get_state() == Message.MSG_CLEAN and not self._send_array.empty():  # 发送消息
-            self._sending_message = self._send_array.get()
-            self._stream.write(self._sending_message.get_bytes())
-        else: # 监听
-            self._read_data()
-            is_sync = False
-
-        # 事件处理循环
-        if is_sync:
-            self._connect_loop()
-
-    def _read_data(self):
-        self._stream.read_until(b'\r\n', self._read_callback, 1024)
-
-    def _read_callback(self, data):
+    def _read_loop(self, data):
         print(data)
-        if self._message.get_state() == Message.MSG_CLEAN: # 读取新消息
-            self._message.update_data(data)
-        elif self._message.get_state() == Message.MSG_PART: # 读取剩余部分消息
-            self._message.append_data(data)
-        else:
-            pass # exception
+        message = self.resolve_data(data)
+        
+        if message.get_state() == Message.MSG_FULL: # 完整消息处理
+             self._message_handler(message)
+             message.clean()
 
-        self._connect_loop()
+        if self._stream:
+            self._stream.read_until(b'\r\n', self._read_loop, 1024)
 
-    def _sending_handler(self, message):
-        pass
+    def _write_loop(self):
+        if len(self._send_array) > 0:
+            msg = self._send_array.pop(0)
+            self._send_message(msg)
+            print('send:::', msg.get_bytes())
+
+        IOLoop.current().call_later(5, self._write_loop)
+
+    def _event_resolver(self):
+        while len(self._device.events) > 0:
+            event = self._device.events.pop(0)
+            if event == self._device.EVENT_INIT:
+                self._send_array.append(self.create_message(0x80, b'GPSON#'))
+                self._send_array.append(self.create_message(0x80, b'TIME|1|1|\x0B\x00\x14\x00|||||||]\x0B\x00\x14\x00|||||||]\x0B\x00\x14\x00|||||||}'))
+
+    def _send_message(self, message):
+        if self._stream:
+            self._stream.write(message.get_bytes())
+
+    def _handler(self):
+        self._stream.read_until(b'\r\n', self._read_loop, 1024)
+        self._write_loop()
 
     def _message_handler(self, message):
         length, msg_type, msg, serial = message.parse_message()
@@ -81,17 +79,24 @@ class RobotConnection(Connection):
         if callback:
             send_msg = callback.handler(self._device, msg, serial)
             if send_msg:
-                self._stream.write(send_msg.get_bytes())
+                self._send_message(send_msg)
+            self._event_resolver()
         else:
             print(msg_type, 'message handler is not set.')
 
-    def send_message(self, message):
-        self._send_array.put(message)
 
 class GPSServer(TCPServer):
     def __init__(self):
         super(GPSServer, self).__init__()
-        GPSServer.register_handler()
+
+        from tcpserver import handler
+        GPSServer.register_handler([
+            handler.LoginHandler,
+            handler.GPSInfoHandler,
+            handler.HeartHandler,
+            handler.TimeSyncHandler,
+            handler.CheckInOutHandler,
+        ])
 
     def handle_stream(self, stream, address):
         print("New connection :", address, stream)
@@ -99,13 +104,8 @@ class GPSServer(TCPServer):
         print("connection num is:", len(Connection.clients))
 
     @staticmethod
-    def register_handler():
-        from tcpserver import handler
-        RobotConnection._callback_map.update({
-            handler.LoginHandler.MSG_TYPE: handler.LoginHandler(),
-            handler.GPSInfoHandler.MSG_TYPE: handler.GPSInfoHandler(),
-            handler.HeartHandler.MSG_TYPE: handler.HeartHandler(),
-            handler.TimeSyncHandler.MSG_TYPE: handler.TimeSyncHandler(),
-            handler.CheckInOutHandler.MSG_TYPE: handler.CheckInOutHandler(),
-        })
+    def register_handler(handers):
+        for hander in handers:
+            RobotConnection._callback_map.update({hander.MSG_TYPE: hander()})
+ 
 

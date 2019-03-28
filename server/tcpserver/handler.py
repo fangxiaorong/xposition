@@ -22,6 +22,7 @@ class LoginHandler(MessageHandler):
 
         device.imei = imei
         device.device_no = device_no
+        device.events.append(device.EVENT_INIT)
 
         print('receive login', imei, device_no)
 
@@ -98,3 +99,20 @@ class CheckInOutHandler(object):
         data = struct.pack('!BBBBBBBBH', date.year - 2000, date.month, date.day, date.hour, date.minute, date.second, 1, 1, reserve)
         return Message(CheckInOutHandler.MSG_TYPE, serial, data)
 
+
+class UpCtrlHandler(object):
+    MSG_TYPE = 0x81
+    def __init__(self):
+        super(UpCtrlHandler, self).__init__()
+    
+    def _set_fn_handler(self):
+        pass
+
+    def _set_sos_handler(self):
+        pass
+
+    def _set_gps_handler(self):
+        pass
+
+    def handler(self, device, message, serial):
+        pass

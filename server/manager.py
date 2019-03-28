@@ -17,8 +17,10 @@ def cli1():
 def location(port):
     """Command for start location server"""
     print("Server start ......")
-    server = GPSServer()  
-    server.listen(port)  
+    server = GPSServer()
+    server.listen(port) # simple single-process
+    # server.bind(port)
+    # server.start(0)
     IOLoop.instance().start()
 
 @click.group()
