@@ -299,6 +299,17 @@ class ExamUser(BaseTable):
         return self._new_records(cursor, ['exam_id', 'line_id', 'device_id', 'username', 'departname', 'create_time'], users)
 
     def update_record(self, cursor, record_id, **kwargs):
+        active_id = table_manager(Exam).get_active_id()
+        if user.get('exam_id') == active_id:
+            pos_str = r_conn.hget('active_user_info', record_id)
+            if pos_str:
+                att = json.loads(pos_str)
+                att['line_id'] = kwargs['line_id']
+                att['username'] = kwargs['username']
+                att['departname'] = kwargs['departname']
+                pos_str = json.dumps(att)
+                r_conn.hset('active_user_info', record_id, pos_str)
+
         self._update_record(cursor, record_id, **kwargs)
 
     def query_records(self, cursor, **kwargs):
