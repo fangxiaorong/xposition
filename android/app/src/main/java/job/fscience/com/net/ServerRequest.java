@@ -16,7 +16,7 @@ public class ServerRequest {
     OkHttpClient client = null;
 
     String userId;
-//    String baseUrl = "http://10.0.108.155";
+//    String baseUrl = "http://10.253.102.125:8002";
 //    String baseUrl = "http://192.168.0.102";
     String baseUrl = "http://212.64.26.210";
 

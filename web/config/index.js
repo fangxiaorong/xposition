@@ -12,6 +12,7 @@ module.exports = {
     assetsPublicPath: '/',
     proxyTable: {
       // mock api server url
+      "/api": 'http://127.0.0.1:8002'
     },
 
     // Various Dev Server settings

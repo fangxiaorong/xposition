@@ -340,13 +340,21 @@ class ExamUser(BaseTable):
             'departname': user.get('departname'),
             'create_time': datetime.now().isoformat(),
         }
-        return self._new_record(cursor, **user_info)
+        result = self._new_record(cursor, **user_info)
+        user_id = cursor.lastrowid
+
+        active_id = table_manager(Exam).get_active_id()
+        if user.get('exam_id') == active_id:
+            pos_str = json.dumps({'user_id': user_id, 'line_id': user.get('line_id'), 'username': user.get('username')})
+            r_conn.hset('active_user_info', user_id, pos_str)
+
+        return result
 
     def delete_record(self, cursor, exam_id):
         return self._delete_record(cursor, exam_id=exam_id)
 
     def update_active(self, cursor, exam_id):
-        exam_user_infos = self.query_records(cursor, exam_id=exam_id, line_id=None)
+        exam_user_infos = self.query_records(cursor, exam_id=exam_id)
         user_record = table_manager(UserRecord, str(exam_id))
         user_record.create_table()
 
@@ -450,22 +458,23 @@ class UserRecord(BaseTable):
         info = r_conn.hget(self.active_user_info_key, user_id)
         if info is not None:
             info = json.loads(info)
-            pos_str = json.dumps({'user_id': user_id, 'username': info.get('username'), 'latitude': latitude, 'longitude': longitude, 'manual': manual, 'create_time': time.time()})
+            pos_str = json.dumps({'user_id': user_id, 'line_id': info.get('line_id'), 'username': info.get('username'), 'latitude': latitude, 'longitude': longitude, 'manual': manual, 'create_time': time.time()})
             r_conn.hset(self.active_user_info_key, user_id, pos_str)
 
-            if manual == 1 or r_conn.llen(key) >= 20:
-                datas = r_conn.lrange(key, 0, -1)
-                r_conn.ltrim(key, 1000, 1000)
+            if info.get('line_id'):
+                if manual == 1 or r_conn.llen(key) >= 20:
+                    datas = r_conn.lrange(key, 0, -1)
+                    r_conn.ltrim(key, 1000, 1000)
 
-                with CursorManager() as cursor:
-                    pos_infos = []
-                    for data in datas:
-                        data = json.loads(data)
-                        pos_infos.append((data.get('user_id'), data.get('latitude'), data.get('longitude'), data.get('manual'), data.get('create_time')))
-                    pos_infos.append((user_id, latitude, longitude, manual, time.time()))
-                    self._new_records(cursor, ['user_id', 'latitude', 'longitude', 'manual', 'create_time'], pos_infos)
-            else:
-                r_conn.rpush(key, pos_str)
+                    with CursorManager() as cursor:
+                        pos_infos = []
+                        for data in datas:
+                            data = json.loads(data)
+                            pos_infos.append((data.get('user_id'), data.get('latitude'), data.get('longitude'), data.get('manual'), data.get('create_time')))
+                        pos_infos.append((user_id, latitude, longitude, manual, time.time()))
+                        self._new_records(cursor, ['user_id', 'latitude', 'longitude', 'manual', 'create_time'], pos_infos)
+                else:
+                    r_conn.rpush(key, pos_str)
 
     def query_records(self, user_id, max_id=None, start=None, end=None, **kwargs):
         result = []
@@ -776,7 +785,7 @@ class ExamCalculate(object):
             result = {'examname': exam_info.get('name'), 'level1': level1, 'level2': level2, 'level3': level3, 'level4': level4}
             users = []
 
-            user_info_list = table_manager(ExamUser).query_records(cursor, exam_id=active_id)
+            user_info_list = table_manager(ExamUser).query_records(cursor, exam_id=active_id, line_id=None)
             for user_info in user_info_list:
                 line_id = user_info.get('line_id')
 
@@ -910,10 +919,7 @@ def add_device_record(device_id, latitude=None, longitude=None, ischeckin=False)
         user = users[0]
 
         if latitude and longitude:
-            print('sfadsfadsfadsfasdfasfd')
             user_record = table_manager(UserRecord, str(active_id), False)
             if user_record:
-                print('sfadsfadsfadsfasdfasfd', user.get('id'))
                 user_record.add_record(user.get('id'), latitude, longitude, 1 if ischeckin else 2)
-                print('sfadsfadsfadsfasdfasfd')
 

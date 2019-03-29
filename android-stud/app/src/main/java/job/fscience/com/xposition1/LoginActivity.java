@@ -1,12 +1,12 @@
 package job.fscience.com.xposition1;
 
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.View;
 import android.widget.*;
-import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import job.fscience.com.lib.MacUtils;
@@ -16,7 +16,6 @@ import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.Response;
 
-import javax.crypto.Mac;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -42,7 +41,28 @@ public class LoginActivity extends AppCompatActivity {
         findViewById(R.id.login).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                userLogin();
+                if (((Spinner)findViewById(R.id.line)).getSelectedItem() == null) {
+                    Toast.makeText(LoginActivity.this, "线路不能为空", Toast.LENGTH_LONG).show();
+                    return;
+                }
+                String linename = ((LineInfo)((Spinner)findViewById(R.id.line)).getSelectedItem()).name;
+                String username = ((EditText)findViewById(R.id.username)).getText().toString().trim();
+                String departname = ((EditText)findViewById(R.id.departname)).getText().toString().trim();
+
+                AlertDialog.Builder dialog = new AlertDialog.Builder(LoginActivity.this);
+                dialog.setTitle("确认注册")
+                        .setMessage(String.format("线路：%s\n姓名：%s\n部门：%s", linename, username, departname))
+                        .setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+                                userLogin();
+                            }
+                        }).setNegativeButton("取消", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+                            }
+                        });
+                dialog.show();
             }
         });
 
@@ -92,6 +112,7 @@ public class LoginActivity extends AppCompatActivity {
                 if (object == null) {
                     showTextOnUIThread("服务器错误");
                 } else if (object.getInteger("state") == 1) {
+//                    getLines();
                     LoginActivity.userInfo = object.getJSONObject("user");
                     Intent intent = new Intent(LoginActivity.this, PositionActivity.class);
                     LoginActivity.this.startActivity(intent);
