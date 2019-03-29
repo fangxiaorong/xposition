@@ -7,6 +7,8 @@ import datetime
 from tcpserver.message import Message
 from libs.functions import hex_str
 
+from backends import ExamCalculate
+
 class MessageHandler(object):
     def __init__(self):
         super(MessageHandler, self).__init__()
@@ -22,11 +24,10 @@ class LoginHandler(MessageHandler):
 
         device.imei = imei
         device.device_no = device_no
-        device.events.append(device.EVENT_INIT)
 
         print('receive login', imei, device_no)
 
-        return Message(LoginHandler.MSG_TYPE, serial)
+        return Message(LoginHandler.MSG_TYPE, serial), device.EVENT_INIT
 
 class GPSInfoHandler(object):
     MSG_TYPE = 0x10
@@ -34,18 +35,20 @@ class GPSInfoHandler(object):
         super(GPSInfoHandler, self).__init__()
     
     def handler(self, device, message, serial):
-        year, month, day, hour, minute, second, gps_info, longitude, latitude, speed, gps_state = struct.unpack('!BBBBBBBLLBH', message)
+        year, month, day, hour, minute, second, gps_info, latitude, longitude, speed, gps_state, extend = struct.unpack('!BBBBBBBLLBHH', message)
         date_time = '%d-%d-%d %d:%d:%d' % (year + 2000, month, day, hour, minute, second)
-        longitude = longitude / 30000
-        longitude = '%dº%f‘' % (longitude // 60, longitude % 60)
-        latitude = latitude / 30000
-        latitude = '%dº%f‘' % (latitude // 60, latitude % 60)
+        longitude = longitude / 30000 / 60
+        latitude = latitude / 30000 / 60
+
+        latitude, longitude = ExamCalculate.gps_to_amap(latitude, longitude)
 
         device.longitude = longitude
         device.latitude = latitude
         device.speed = speed
 
         print('receive gps', date_time, longitude, latitude, speed)
+
+        return None, device.EVENT_POSITION
 
 class HeartHandler(object):
     MSG_TYPE = 0x13
@@ -61,7 +64,7 @@ class HeartHandler(object):
 
         print('receive heart', heart_type, battery, signal)
 
-        return Message(HeartHandler.MSG_TYPE, serial)
+        return Message(HeartHandler.MSG_TYPE, serial), None
 
 class TimeSyncHandler(object):
     MSG_TYPE = 0x1F
@@ -75,7 +78,8 @@ class TimeSyncHandler(object):
         print('receive settime', date_time)
 
         data = struct.pack('!LH', int(datetime.datetime.utcnow().timestamp()), 0)
-        return Message(TimeSyncHandler.MSG_TYPE, serial, data)
+        return Message(TimeSyncHandler.MSG_TYPE, serial, data), None
+
 
 class CheckInOutHandler(object):
     MSG_TYPE = 0xB0
@@ -83,21 +87,25 @@ class CheckInOutHandler(object):
         super(CheckInOutHandler, self).__init__()
     
     def handler(self, device, message, serial):
-        year, month, day, hour, minute, second, gps_fix, reserve, gps_num, longitude, latitude, speed = struct.unpack('!BBBBBBBHBLLB', message[:19])
+        year, month, day, hour, minute, second, gps_fix, reserve, gps_num, latitude, longitude, speed = struct.unpack('!BBBBBBBHBLLB', message[:19])
         date_time = '%d-%d-%d %d:%d:%d' % (year + 2000, month, day, hour, minute, second)
 
-        longitude = longitude / 30000
-        longitude = '%dº%f‘' % (longitude // 60, longitude % 60)
-        latitude = latitude / 30000
-        latitude = '%dº%f‘' % (latitude // 60, latitude % 60)
+        longitude = longitude / 30000 / 60
+        latitude = latitude / 30000 / 60
+
+        latitude, longitude = ExamCalculate.gps_to_amap(latitude, longitude)
 
         print('check time', date_time)
         print('reserve', reserve)
         print('gps:', gps_num, latitude, longitude, speed)
 
+        device.longitude = longitude
+        device.latitude = latitude
+        device.speed = speed
+
         date = datetime.datetime.now()
         data = struct.pack('!BBBBBBBBH', date.year - 2000, date.month, date.day, date.hour, date.minute, date.second, 1, 1, reserve)
-        return Message(CheckInOutHandler.MSG_TYPE, serial, data)
+        return Message(CheckInOutHandler.MSG_TYPE, serial, data), device.EVENT_CHECKIN
 
 
 class UpCtrlHandler(object):

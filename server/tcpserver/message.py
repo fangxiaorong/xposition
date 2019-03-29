@@ -63,7 +63,7 @@ class Message(object):
 
     def parse_message(self):
         if self._data[0] == 0x78 and self._data[1] == 0x78:
-            print('xxxxx', self._data[2] - 5)
+            print('Accept: 0x%0X len: %d' % (self._data[3], self._data[2] - 5))
             pack_struct = '!HBB%ds2sHH' % (self._data[2] - 5)
         else:
             pack_struct = '!HHB%ds2sHH' % (self._data[2] << 8 + self._data[3] - 5)

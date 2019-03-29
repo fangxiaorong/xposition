@@ -138,7 +138,7 @@ class BaseTable(object):
 
     def _query_record(self, cursor, fields, orderby='', **kwargs):
         if kwargs:
-            val = [(kv[0] + '="' + str(kv[1]) + '"') for kv in kwargs.items()]
+            val = [(kv[0] + '="' + str(kv[1]) + '"') if kv[1] is not None else (kv[0] + ' is not null') for kv in kwargs.items()]
         else:
             val = ['1=1']
 
@@ -346,7 +346,7 @@ class ExamUser(BaseTable):
         return self._delete_record(cursor, exam_id=exam_id)
 
     def update_active(self, cursor, exam_id):
-        exam_user_infos = self.query_records(cursor, exam_id=exam_id)
+        exam_user_infos = self.query_records(cursor, exam_id=exam_id, line_id=None)
         user_record = table_manager(UserRecord, str(exam_id))
         user_record.create_table()
 
@@ -518,7 +518,7 @@ class ExamCalculate(object):
         return ret
 
     @classmethod
-    def _gps_to_amap(self, latitude, longitude):
+    def gps_to_amap(self, latitude, longitude):
         if longitude >= 72.004 and longitude <= 137.8347 and latitude >= 0.8293 and latitude <= 55.8271:
             d_lat = self._transform_lat(longitude - 105.0, latitude - 35.0)
             d_lon = self._transform_lon(longitude - 105.0, latitude - 35.0)
@@ -528,14 +528,14 @@ class ExamCalculate(object):
             sqrt_magic = math.sqrt(magic);
             d_lat = (d_lat * 180.0) / ((ExamCalculate.a * (1 - ExamCalculate.ee)) / (magic * sqrt_magic) * ExamCalculate.pi)
             d_lon = (d_lon * 180.0) / (ExamCalculate.a / sqrt_magic * math.cos(rad_lat) * ExamCalculate.pi)
-      
+
             latitude = latitude + d_lat
             longitude = longitude + d_lon
 
         return latitude, longitude
 
     @classmethod
-    def _dd2k_to_amap(self, x, y):
+    def dd2k_to_amap(self, x, y):
         a = 6378137.0
         ee = math.sqrt(0.0066943802290)
         b = math.sqrt(a * a * (1 - ee * ee))
@@ -589,7 +589,7 @@ class ExamCalculate(object):
                               (5 + 28 * tf * tf + 24 * math.pow(tf, 4) + 6 * itaf * itaf + 8 * math.pow(itaf * tf, 2)) *
                               math.pow(ynf, 5) / 120.0 / math.cos(Bf)) + midlong
 
-        return self._gps_to_amap(latitude * 180 / math.pi, longitude * 180 / math.pi)
+        return self.gps_to_amap(latitude * 180 / math.pi, longitude * 180 / math.pi)
 
     @classmethod
     def _time_to_timestamp(self, time_str):
@@ -608,7 +608,7 @@ class ExamCalculate(object):
         for point in json.loads(line_info.get('points')):
             x = float(point.get('x'))
             y = float(point.get('y'))
-            lat, lon = self._dd2k_to_amap(x, y)
+            lat, lon = self.dd2k_to_amap(x, y)
             stime = self._time_to_timestamp(point.get('stime'))
             etime = self._time_to_timestamp(point.get('etime'))
             point.update({
@@ -861,7 +861,7 @@ def table_manager(table, ext_name=None, create=True, **kwargs):
 
 # print(ExamCalculate._calculate_distance(39.923423, 116.368904, 39.922501, 116.387271))
 # ExamCalculate.calculate(2)        
-# print(ExamCalculate._dd2k_to_amap(4425446.67386214, 20453185.9322068))
+# print(ExamCalculate.dd2k_to_amap(4425446.67386214, 20453185.9322068))
 # ExamCalculate.calculate_all(2, 10, 15, 30)
 
 def test():
@@ -878,4 +878,42 @@ def test():
         # print(query_exam(cursor))
         exam = Exam()
         print(exam.query_records(cursor))
+
+################################ FOR GPS Device ##############################################################
+
+def add_device_record(device_id, latitude=None, longitude=None, ischeckin=False):
+    if not device_id:
+        return
+
+    exam = table_manager(Exam)
+    active_id = exam.get_active_id()
+    if active_id < 0:
+        return
+
+    with CursorManager() as cursor:
+        exam_user = table_manager(ExamUser)
+        users = exam_user.query_records(cursor, device_id=device_id, exam_id=active_id)
+        if not users:
+            exam_user.new_record(cursor, {
+                'exam_id': active_id,
+                # 'line_id': None,
+                'device_id': device_id,
+                'username': '',
+                'departname': ''
+            })
+
+            users = exam_user.query_records(cursor, device_id=device_id, exam_id=active_id)
+
+            if not users:
+                return
+
+        user = users[0]
+
+        if latitude and longitude:
+            print('sfadsfadsfadsfasdfasfd')
+            user_record = table_manager(UserRecord, str(active_id), False)
+            if user_record:
+                print('sfadsfadsfadsfasdfasfd', user.get('id'))
+                user_record.add_record(user.get('id'), latitude, longitude, 1 if ischeckin else 2)
+                print('sfadsfadsfadsfasdfasfd')
 

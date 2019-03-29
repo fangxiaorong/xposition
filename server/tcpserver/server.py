@@ -7,6 +7,8 @@ from tornado.ioloop import IOLoop
 from tcpserver.message import Message, MessageManager
 from tcpserver.device import DeviceInfo
 
+from backends import add_device_record
+
 class Connection(object):
     clients = set()
     def __init__(self, stream, address):
@@ -58,12 +60,16 @@ class RobotConnection(Connection):
 
         IOLoop.current().call_later(5, self._write_loop)
 
-    def _event_resolver(self):
-        while len(self._device.events) > 0:
-            event = self._device.events.pop(0)
-            if event == self._device.EVENT_INIT:
-                self._send_array.append(self.create_message(0x80, b'GPSON#'))
-                self._send_array.append(self.create_message(0x80, b'TIME|1|1|\x0B\x00\x14\x00|||||||]\x0B\x00\x14\x00|||||||]\x0B\x00\x14\x00|||||||}'))
+    def _event_resolver(self, event):
+        if event == self._device.EVENT_INIT:
+            self._send_array.append(self.create_message(0x80, b'GPSON#'))
+            self._send_array.append(self.create_message(0x80, b'TIME|1|1|\x01\x00\x17\x00|||||||]\x01\x00\x17\x00|||||||]\x01\x00\x17\x00|||||||}'))
+
+            add_device_record(self._device.imei)
+        elif event == self._device.EVENT_POSITION:
+            add_device_record(self._device.imei, self._device.latitude, self._device.longitude)
+        elif event == self._device.EVENT_CHECKIN:
+            add_device_record(self._device.imei, self._device.latitude, self._device.longitude, True)
 
     def _send_message(self, message):
         if self._stream:
@@ -77,10 +83,11 @@ class RobotConnection(Connection):
         length, msg_type, msg, serial = message.parse_message()
         callback = RobotConnection._callback_map.get(msg_type)
         if callback:
-            send_msg = callback.handler(self._device, msg, serial)
+            send_msg, event = callback.handler(self._device, msg, serial)
             if send_msg:
                 self._send_message(send_msg)
-            self._event_resolver()
+            if event:
+                self._event_resolver(event)
         else:
             print(msg_type, 'message handler is not set.')
 
