@@ -103,8 +103,9 @@ class CheckInOutHandler(object):
         device.latitude = latitude
         device.speed = speed
 
-        date = datetime.datetime.now()
-        data = struct.pack('!BBBBBBBBH', date.year - 2000, date.month, date.day, date.hour, date.minute, date.second, 1, 1, reserve)
+        # date = datetime.datetime.now()
+        # data = struct.pack('!BBBBBBBBH', date.year - 2000, date.month, date.day, date.hour, date.minute, date.second, 1, 1, reserve)
+        data = struct.pack('!BBBBBBBBH', year, month, day, hour, minute, second, 1, 1, reserve)
         return Message(CheckInOutHandler.MSG_TYPE, serial, data), device.EVENT_CHECKIN
 
 
