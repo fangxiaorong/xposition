@@ -300,7 +300,7 @@ class ExamUser(BaseTable):
 
     def update_record(self, cursor, record_id, **kwargs):
         active_id = table_manager(Exam).get_active_id()
-        if user.get('exam_id') == active_id:
+        if kwargs['exam_id'] == active_id:
             pos_str = r_conn.hget('active_user_info', record_id)
             if pos_str:
                 att = json.loads(pos_str)
