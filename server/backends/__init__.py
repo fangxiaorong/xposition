@@ -374,11 +374,14 @@ class ExamUser(BaseTable):
         del_keys.append(user_record.active_user_info_key)
         r_conn.delete(*tuple(del_keys))
 
-        info_map = {} # {'exam_id': exam_id}
-        for user_info in exam_user_infos:
-            info_map.update({user_info.get('id'): json.dumps({'username': user_info.get('username')})})
-        print(info_map)
-        r_conn.hmset(user_record.active_user_info_key, info_map)
+        if len(exam_user_infos) > 0:
+            info_map = {} # {'exam_id': exam_id}
+            for user_info in exam_user_infos:
+                info_map.update({user_info.get('id'): json.dumps({'username': user_info.get('username')})})
+            print(info_map)
+            r_conn.hmset(user_record.active_user_info_key, info_map)
+        else:
+            r_conn.delete(user_record.active_user_info_key)
 
     def query_locations(self):
         result = []
