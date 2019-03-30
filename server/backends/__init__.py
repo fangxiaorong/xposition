@@ -304,12 +304,18 @@ class ExamUser(BaseTable):
             pos_str = r_conn.hget('active_user_info', record_id)
             if pos_str:
                 att = json.loads(pos_str)
-                att['line_id'] = kwargs['line_id']
-                att['username'] = kwargs['username']
-                att['departname'] = kwargs['departname']
-                detail = kwargs.get('detail') or att.get('detail')
-                if detail:
-                    att['detail'] = detail
+                data = kwargs.get('line_id') or att.get('line_id')
+                if data:
+                    att['line_id'] = data
+                data = kwargs.get('username') or att.get('username')
+                if data:
+                    att['username'] = data
+                data = kwargs.get('departname') or att.get('departname')
+                if data:
+                    att['departname'] = data
+                data = kwargs.get('detail') or att.get('detail')
+                if data:
+                    att['detail'] = data
                 pos_str = json.dumps(att)
                 r_conn.hset('active_user_info', record_id, pos_str)
 
