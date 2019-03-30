@@ -98,6 +98,23 @@ public class UsersActivity extends BaseActivity {
             return;
         }
 
+
+        if (level1 >= level2) {
+            Toast.makeText(this, "良好的距离必须大于优秀的距离", Toast.LENGTH_LONG).show();
+
+            return;
+        }
+        if (level2 >= level3) {
+            Toast.makeText(this, "合格的距离必须大于良好的距离", Toast.LENGTH_LONG).show();
+
+            return;
+        }
+        if (level3 >= level4) {
+            Toast.makeText(this, "不合格的距离必须大于合格的距离", Toast.LENGTH_LONG).show();
+
+            return;
+        }
+
         XApplication.getServerInstance().managerQueryResults(level1, level2, level3, level4, new AuthCallback() {
             @Override
             public void onFailureEx(Call call, IOException e) {
