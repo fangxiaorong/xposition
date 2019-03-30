@@ -270,15 +270,15 @@ class Exam(BaseTable):
                 result = 1003 
             else:
                 exam_user = table_manager(ExamUser)
-                if len(exam_user.query_records(cursor, exam_id=exam_id)) > 0:
-                    self._update_record(cursor, exam_id, state=2, **kwargs)
-                    r_conn.hmset(self._exam_active_id, {str(exam_id): 1, '-1': exam_id})
+                # if len(exam_user.query_records(cursor, exam_id=exam_id)) > 0:
+                self._update_record(cursor, exam_id, state=2, **kwargs)
+                r_conn.hmset(self._exam_active_id, {str(exam_id): 1, '-1': exam_id})
 
-                    exam_user.update_active(cursor, exam_id)
+                exam_user.update_active(cursor, exam_id)
 
-                    result = 1
-                else:
-                    result = 1000
+                result = 1
+                # else:
+                    # result = 1 #1000
                 pass
         else:
             result = 1001
