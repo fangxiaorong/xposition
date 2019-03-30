@@ -307,7 +307,9 @@ class ExamUser(BaseTable):
                 att['line_id'] = kwargs['line_id']
                 att['username'] = kwargs['username']
                 att['departname'] = kwargs['departname']
-                att['detail'] = kwargs.get('detail')
+                detail = kwargs.get('detail') or att.get('detail')
+                if detail:
+                    att['detail'] = detail
                 pos_str = json.dumps(att)
                 r_conn.hset('active_user_info', record_id, pos_str)
 
