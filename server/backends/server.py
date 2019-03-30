@@ -102,6 +102,10 @@ class UserAutoLogin(BaseHandler):
                 exam_user = table_manager(ExamUser)
                 users = exam_user.query_records(cursor, device_id=device_id, exam_id=active_id)
                 if users:
+                    if users[0].get('line_id'):
+                        line_info = table_manager(ExamUser).query_record(id=users[0].get('line_id'))
+                        if line_info:
+                            users[0]['username'] = '%s (%s)' % (users[0].get('username', ''), line_info.get('name', ''))
                     self.write(json.dumps({
                         'state': 1,
                         'message': '成功',
