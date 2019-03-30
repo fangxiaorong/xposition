@@ -87,7 +87,7 @@ class CheckInOutHandler(object):
         super(CheckInOutHandler, self).__init__()
     
     def handler(self, device, message, serial):
-        year, month, day, hour, minute, second, gps_fix, reserve, gps_num, latitude, longitude, speed = struct.unpack('!BBBBBBBHBLLB', message[:19])
+        year, month, day, hour, minute, second, gps_fix, reserve, gps_num, latitude, longitude, speed, direct, info, level, gsm, extend = struct.unpack('!BBBBBBBHBLLBHBBBH', message[:26])
         date_time = '%d-%d-%d %d:%d:%d' % (year + 2000, month, day, hour, minute, second)
 
         longitude = longitude / 30000 / 60
@@ -97,7 +97,7 @@ class CheckInOutHandler(object):
 
         print('check time', date_time)
         print('reserve', reserve)
-        print('gps:', gps_num, latitude, longitude, speed)
+        print('gps:', extend, latitude, longitude, speed)
 
         device.longitude = longitude
         device.latitude = latitude
