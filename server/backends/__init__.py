@@ -307,6 +307,7 @@ class ExamUser(BaseTable):
                 att['line_id'] = kwargs['line_id']
                 att['username'] = kwargs['username']
                 att['departname'] = kwargs['departname']
+                att['detail'] = kwargs.get('detail')
                 pos_str = json.dumps(att)
                 r_conn.hset('active_user_info', record_id, pos_str)
 
@@ -863,7 +864,7 @@ class ExamCalculate(object):
                     points.append(data)
 
                 user_result.update({'points': points, 'total_score': total_score})
-                table_manager(ExamUser).update_record(cursor, user_info.get('id'), detail=json.dumps(user_result))
+                table_manager(ExamUser).update_record(cursor, user_info.get('id'), exam_id=user_info.get('exam_id'), detail=json.dumps(user_result))
                 users.append(user_result)
             result.update({'users': users})
         print(result)
