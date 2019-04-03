@@ -517,7 +517,7 @@ class UserRecord(BaseTable):
 
                 try:
                     sql_str = '''
-                        SELECT id, latitude, longitude, create_time FROM %s WHERE %s order by create_time asc
+                        SELECT id, latitude, longitude, create_time, manual FROM %s WHERE %s order by create_time asc
                     ''' % (self._table, ' and '.join(val))
                     print(sql_str)
                     cursor.execute(sql_str)

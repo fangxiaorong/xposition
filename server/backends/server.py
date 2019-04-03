@@ -5,6 +5,7 @@
 
 
 import os
+import math
 from datetime import datetime
 
 import json
@@ -246,6 +247,39 @@ class ManagerGetLocations(web.RequestHandler):
 
 @app.route(r'/api/manager/track/(\d+)')
 class ManagerGetUserTrack(BaseHandler):
+    def _find_first_point(self, points):
+        prev_lat = points[0][1]
+        prev_lng = points[0][2]
+        distance = 100000
+        size = len(points)
+        start_index = 1
+        while start_index < size and distance > 0.00000001 and points[0][3] == 2:
+            distance = math.pow(prev_lat - points[start_index][1], 2) + math.pow(prev_lng - points[start_index][2], 2)
+            prev_lat = points[start_index][1]
+            prev_lng = points[start_index][2]
+            start_index += 1
+
+        return start_index
+
+    def _filter_points(self, points):
+        size = len(points)
+        start_index = self._find_first_point(points)
+        if start_index >= size:
+            return []
+
+        path = [points[start_index],]
+        prev_lat = points[start_index][1]
+        prev_lng = points[start_index][2]
+        for point in points[start_index + 1:]:
+            if prev_lat != point[1] || prev_lng != point[2]:
+                distance = math.pow(prev_lat - point[1], 2) + math.pow(prev_lng - point[2], 2)
+                if distance < 0.00000001 or point[4] == 1:
+                    path.append(point)
+                    prev_lat = point[1]
+                    prev_lng = point[2]
+
+        return path
+
     def get(self, user_id):
         start = int(self.get_argument('start', 0))
         end = int(self.get_argument('end', 0))
@@ -254,7 +288,7 @@ class ManagerGetUserTrack(BaseHandler):
         if exam_id:
             user_record = table_manager(UserRecord, str(exam_id), False)
             points = user_record.query_records(int(user_id), start=start / 1000.0, end=end / 1000.0)
-
+            points = self._filter_points(points)
             self.write(json.dumps({
                 'state': 1,
                 'message': '成功',
