@@ -271,7 +271,7 @@ class ManagerGetUserTrack(BaseHandler):
         prev_lat = points[start_index][1]
         prev_lng = points[start_index][2]
         for point in points[start_index + 1:]:
-            if prev_lat != point[1] || prev_lng != point[2]:
+            if prev_lat != point[1] or prev_lng != point[2]:
                 distance = math.pow(prev_lat - point[1], 2) + math.pow(prev_lng - point[2], 2)
                 if distance < 0.00000001 or point[4] == 1:
                     path.append(point)
