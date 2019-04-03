@@ -248,15 +248,15 @@ class ManagerGetLocations(web.RequestHandler):
 @app.route(r'/api/manager/track/(\d+)')
 class ManagerGetUserTrack(BaseHandler):
     def _find_first_point(self, points):
-        prev_lat = points[0][1]
-        prev_lng = points[0][2]
+        prev_lat = points[0]['latitude']
+        prev_lng = points[0]['longitude']
         distance = 100000
         size = len(points)
         start_index = 1
-        while start_index < size and distance > 0.00000001 and points[0][3] == 2:
-            distance = math.pow(prev_lat - points[start_index][1], 2) + math.pow(prev_lng - points[start_index][2], 2)
-            prev_lat = points[start_index][1]
-            prev_lng = points[start_index][2]
+        while start_index < size and distance > 0.00000001 and points[0]['manual'] == 2:
+            distance = math.pow(prev_lat - points[start_index]['latitude'], 2) + math.pow(prev_lng - points[start_index]['longitude'], 2)
+            prev_lat = points[start_index]['latitude']
+            prev_lng = points[start_index]['longitude']
             start_index += 1
 
         return start_index
@@ -268,15 +268,15 @@ class ManagerGetUserTrack(BaseHandler):
             return []
 
         path = [points[start_index],]
-        prev_lat = points[start_index][1]
-        prev_lng = points[start_index][2]
+        prev_lat = points[start_index]['latitude']
+        prev_lng = points[start_index]['longitude']
         for point in points[start_index + 1:]:
-            if prev_lat != point[1] or prev_lng != point[2]:
-                distance = math.pow(prev_lat - point[1], 2) + math.pow(prev_lng - point[2], 2)
-                if distance < 0.00000001 or point[4] == 1:
+            if prev_lat != point['latitude'] or prev_lng != point['longitude']:
+                distance = math.pow(prev_lat - point['latitude'], 2) + math.pow(prev_lng - point['longitude'], 2)
+                if distance < 0.00000001 or point['manual'] == 1:
                     path.append(point)
-                    prev_lat = point[1]
-                    prev_lng = point[2]
+                    prev_lat = point['latitude']
+                    prev_lng = point['longitude']
 
         return path
 
