@@ -258,6 +258,7 @@ class ManagerGetUserTrack(BaseHandler):
             prev_lat = points[start_index]['latitude']
             prev_lng = points[start_index]['longitude']
             start_index += 1
+        start_index -= 1
 
         return start_index
 
