@@ -13,6 +13,7 @@ android {
         ndk {
             abiFilters "armeabi-v7a"
         }
+        multiDexEnabled true
     }
     buildTypes {
         release {

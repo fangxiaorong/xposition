@@ -328,7 +328,7 @@ class ExamUser(BaseTable):
             try:
                 line_ids = []
                 for exam_user in exam_users:
-                    line_id = exam_user.get('id')
+                    line_id = exam_user.get('line_id')
                     if line_id is not None:
                         line_ids.append(str(line_id))
                 if len(line_ids) > 0:
@@ -434,6 +434,17 @@ class ExamLine(BaseTable):
         if kwargs.get('valid') is None:
             kwargs.update({'valid': 1})
         return self._update_record(cursor, id, **kwargs)
+
+    def query_postion_record(self, cursor, **kwargs):
+        result = self._query_record(cursor, ('id', 'name', 'points'), **kwargs)
+        if result:
+            result = result[0]
+            points = json.loads(result.get('points', '[]'))
+            for point in points:
+                latitude, longitude = ExamCalculate.dd2k_to_amap(float(point.pop('x')), float(point.pop('y')))
+                point.update({'latitude': latitude, 'longitude': longitude})
+            result.update({'points': json.dumps(points)})
+            return result
 
 class User(BaseTable):
     def __init__(self):

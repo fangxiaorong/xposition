@@ -39,6 +39,7 @@ public class MainActivity extends BaseActivity implements CompoundButton.OnCheck
     private UserListAdapter adapter;
 
     private Polyline polyline = null;
+    private ArrayList<Marker> examMarks = null;
     private MapMarkManager markManager = null;
 
     @Override
@@ -193,6 +194,11 @@ public class MainActivity extends BaseActivity implements CompoundButton.OnCheck
             public void onClick(View view) {
                 if (polyline != null) {
                     polyline.remove();
+                }
+                if (examMarks != null) {
+                    while (examMarks.size() > 0) {
+                        examMarks.remove(0).remove();
+                    }
                 }
 
                 final int userId = (int) view.getTag();
@@ -391,6 +397,11 @@ public class MainActivity extends BaseActivity implements CompoundButton.OnCheck
             polyline.remove();
             polyline = null;
         }
+        if (examMarks != null) {
+            while (examMarks.size() > 0) {
+                examMarks.remove(0).remove();
+            }
+        }
         stopPlay();
 
         findViewById(R.id.route).setVisibility(View.GONE);
@@ -440,6 +451,7 @@ public class MainActivity extends BaseActivity implements CompoundButton.OnCheck
                 @Override
                 public void move(double v) {
                     System.out.println(v);
+                    mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(smoothMarker.getPosition(), 18));
                     if (v <= 0) {
                         stopPlay();
                     }
@@ -485,7 +497,18 @@ public class MainActivity extends BaseActivity implements CompoundButton.OnCheck
                                     }
                                     polyline = mMap.addPolyline(new PolylineOptions().
                                             addAll(latLngs).width(10).color(Color.argb(255, 1, 1, 1)));
+
+                                    JSONArray marks = object.getJSONObject("line").getJSONArray("points");
+                                    ArrayList<MarkerOptions> ps = new ArrayList<>();
+                                    for (int idx = 0; idx < marks.size(); idx++) {
+                                        JSONObject mark = marks.getJSONObject(idx);
+                                        MarkerOptions p = new MarkerOptions();
+                                        p.position(new LatLng(mark.getDouble("latitude"), mark.getDouble("longitude")));
+                                        ps.add(p);
+                                    }
+                                    examMarks = mMap.addMarkers(ps, true);
                                 }
+
                             } catch (Exception e) {
 
                             }

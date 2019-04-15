@@ -290,10 +290,17 @@ class ManagerGetUserTrack(BaseHandler):
             user_record = table_manager(UserRecord, str(exam_id), False)
             points = user_record.query_records(int(user_id), start=start / 1000.0, end=end / 1000.0)
             points = self._filter_points(points)
+
+            with CursorManager() as cursor:
+                exam_users_info = table_manager(ExamUser).query_detail_records(cursor, id=user_id)
+                if exam_users_info:
+                    exam_line_info = table_manager(ExamLine).query_postion_record(cursor, id=exam_users_info[0].get('line_id'))
+
             self.write(json.dumps({
                 'state': 1,
                 'message': '成功',
-                'points': points
+                'points': points,
+                'line': exam_line_info,
             }))
         else:
             self.write(json.dumps({
