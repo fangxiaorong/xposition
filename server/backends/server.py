@@ -677,3 +677,102 @@ class AdminInit(web.RequestHandler):
         else:
             self.write('no permission')
 
+
+@app.route(r'/backend/points')
+class BackendPonts(web.RequestHandler):
+    def get(self):
+        self.write('''
+            <html>
+              <head><title>Upload File</title></head>
+              <body>
+                <form action='/backend/points' enctype="multipart/form-data" method='post' class="item">
+                <!-- <label for="file">上传文件</label> -->
+                <input type='file' name='file' id='file'/>
+                X间隔: <input type='text' name='xsize' />
+                Y间隔: <input type='text' name='ysize' />
+                Z位置: <input type='text' name='z' />
+                <input type='submit' value='提交'/>
+                </form>
+              </body>
+              <style>
+                .item label{
+                    display: inline-block;
+                    width: 100px;
+                    height: 30px;
+                    text-align: center;
+                    color: black;
+                    line-height: 30px;
+                    background-color: white;
+                    border: 1px solid #DDD;
+                    border-radius: 5px;
+                    cursor: pointer;
+                }
+                .item input[type=filex]{
+                    display: none;
+                }
+              </style>
+            </html>
+            ''')
+
+    def distance(self, x, y, z, x1, y1, z1):
+        return math.sqrt((x1 - x) * (x1 - x) + (y1 - y) * (y1 - y) + (z1 - z) * (z1 - z))
+
+    def split_points(self, data, z, x_size, y_size):
+        points = []
+        box = [-10000000, 10000000, -10000000, 10000000, -10000000, 10000000] # xmax, xmin, ymax, ymin, zmax, zmin
+        for line in data:
+            _line = line.split('\t')
+            if len(_line) <= 3:
+                continue
+            x = float(_line[0])
+            y = float(_line[1])
+            z = float(_line[2])
+            points.append((x, y, z))
+            box[0] = max(box[0], x)
+            box[1] = min(box[1], x)
+            box[2] = max(box[2], y)
+            box[3] = min(box[3], y)
+            box[4] = max(box[4], z)
+            box[5] = min(box[5], z)
+
+        return points, box
+
+    def get_near_point(self, x, y, z, points):
+        min_point = None
+        min_distance = 10000000
+        for point in points:
+            d = self.distance(x, y, z, point[0], point[1], point[2])
+            if min_distance > d:
+                min_point = point
+                min_distance = d
+        return min_point
+
+    def get_near_points(self, data, z, x_size, y_size):
+        points, box = self.split_points(data.decode('utf-8').split('\n'), z, x_size, y_size)
+
+        x_max = box[0]
+        x_min = (math.floor(box[1] / x_size) if box[0] > 0 else math.ceil(box[1] / x_size)) * x_size
+        y_max = box[2]
+        y_min = (math.floor(box[3] / x_size) if box[0] > 0 else math.ceil(box[3] / x_size)) * y_size
+
+        while x_max >= x_min:
+            while y_max >= y_min:
+                _x, _y , _z = self.get_near_point(x_min, y_min, z, points)
+                self.write(',,%.2f,%.2f,%.2f,\r\n' % (_x, _y, _z))
+
+                y_min += y_size
+            x_min += x_size
+
+    def post(self):
+        file_metas = self.request.files.get('file', None)
+        x_size = self.get_argument('xsize', None)
+        y_size = self.get_argument('ysize', None)
+        z = self.get_argument('z', None)
+
+        if not x_size or not y_size or not z or not file_metas or len(file_metas) <= 0:
+            self.write('请填写完整参数')
+        else:
+            self.set_header('Content-Type', 'application/octet-stream')
+            self.set_header('Content-Disposition', 'attachment; filename=points')
+            self.get_near_points(file_metas[0]['body'], float(z), float(x_size), float(y_size))
+        self.finish()
