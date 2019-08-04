@@ -4,10 +4,75 @@
 from tornado.tcpserver import TCPServer
 from tornado.ioloop import IOLoop
 
-from tcpserver.message import Message, MessageManager
-from tcpserver.device import DeviceInfo
+# from tcpserver.message import Message, MessageManager
+# from tcpserver.device import DeviceInfo
 
-from backends import add_device_record
+# from backends import add_device_record
+
+class MessageHandler(object):
+    def __init__(self):
+        super(MessageHandler, self).__init__()
+
+class LoginHandler(MessageHandler):
+    MSG_TYPE = 0x01
+    def __init__(self):
+        super(LoginHandler, self).__init__()
+
+    def handler(self, device, message, serial):
+        imei, device_no = struct.unpack('!8sH', message[:10])
+        imei = hex_str(imei)
+
+        device.imei = imei
+        device.device_no = device_no
+
+        print('receive login', imei, device_no)
+
+        return Message(LoginHandler.MSG_TYPE, serial), device.EVENT_INIT
+
+
+class Message(object):
+    MSG_PART = 2
+    MSG_FULL = 3
+    def __init__(self):
+        super(Message, self).__init__()
+        self._state = Message.MSG_PART
+        self._data = None
+
+    def get_needs_bytes(self):
+        pass
+
+    def add_data(self, data):
+        if self._state == Message.MSG_PART:
+            if self._data == None:
+
+
+    def clean(self):
+        self._data = None
+        self._state = Message.MSG_PART
+
+class Reader(object):
+    def __init__(self, stream, message):
+        super(Reader, self).__init__()
+        self.stream = stream
+        self.message = message
+
+    def read_loop(self, data, callback):
+        if self.message.get_needs_bytes() != len(data):
+            pass
+
+class LinkMessage(Message):
+    def get_needs_bytes(self):
+        if self._data is None:
+            return 7
+        return (self._data[3] << 4 + self._data[4] + 3) - len(self._data)
+
+class LinkReader(Reader):
+    """docstring for LinkReader"""
+    def __init__(self, stream):
+        super(LinkReader, self).__init__(stream)
+
+
+
 
 class Connection(object):
     clients = set()
@@ -31,6 +96,7 @@ class Connection(object):
         self._stream = None
         self._message.free()
         Connection.clients.remove(self)
+
 
 class RobotConnection(Connection):
     _callback_map = {}
@@ -91,12 +157,10 @@ class RobotConnection(Connection):
         else:
             print(msg_type, 'message handler is not set.')
 
-
 class GPSServer(TCPServer):
     def __init__(self):
         super(GPSServer, self).__init__()
 
-        from tcpserver import handler
         GPSServer.register_handler([
             handler.LoginHandler,
             handler.GPSInfoHandler,
@@ -115,15 +179,3 @@ class GPSServer(TCPServer):
         for hander in handers:
             RobotConnection._callback_map.update({hander.MSG_TYPE: hander()})
  
-
-
-class TestServer(TCPServer):
-    def __init__(self):
-        super(TestServer, self).__init__()
-
-    def read_loop(self, data):
-        print(data)
-
-    def handle_stream(self, stream, address):
-        stream.read_until(b'\r\n', self.read_loop, 1024)
-
