@@ -116,3 +116,14 @@ class GPSServer(TCPServer):
             RobotConnection._callback_map.update({hander.MSG_TYPE: hander()})
  
 
+
+class TestServer(TCPServer):
+    def __init__(self, arg):
+        super(TestServer, self).__init__()
+
+    def read_loop(self, data):
+        print(data)
+
+    def handle_stream(self, stream, address):
+        stream.read_until(b'\r\n', self.read_loop, 1024)
+

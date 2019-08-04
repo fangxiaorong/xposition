@@ -3,7 +3,7 @@
 
 import click
 
-from tcpserver.server import GPSServer
+from tcpserver.server import GPSServer, TestServer
 from tornado.ioloop  import IOLoop
 
 from backends.server import app
@@ -35,7 +35,21 @@ def protal(port):
     app.listen(port)
     IOLoop.instance().start()
 
-cli = click.CommandCollection(sources=[cli1, cli2])
+
+@click.group()
+def cli3():
+    pass
+
+@cli3.command()
+@click.option('--port', type=int, default=8003, help='service port')
+def xlocation(port):
+    """Command for start location server"""
+    print("Server start ......")
+    server = TestServer()
+    server.listen(port) # simple single-process
+    IOLoop.instance().start()
+
+cli = click.CommandCollection(sources=[cli1, cli2, cli3])
 
 if __name__ == '__main__':
     cli()
@@ -46,3 +60,4 @@ if __name__ == '__main__':
 
     # x = ExamModel()
     # ExamModel.create_table()
+
