@@ -253,6 +253,7 @@ class RobotConnection(Connection):
 
     def _send_message(self, message):
         if self._stream:
+            print('send message:', message.get_data())
             self._stream.write(message.get_data())
 
     def _message_handler(self, message):
