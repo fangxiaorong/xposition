@@ -276,6 +276,7 @@ class GPSServer(TCPServer):
             LoginHandler,
             GPSInfoHandler,
             HeartHandler,
+            NormalHandler,
         ])
         LinkMessage()
 
