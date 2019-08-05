@@ -133,7 +133,7 @@ class LinkMessage(Message):
     def get_need_bytes(self):
         if self._data is None or self.get_state() == Message.MSG_FULL:
             return 7
-        return (self._data[3] << 4) + self._data[4] + 3 - len(self._data)
+        return (self._data[3] << 4) + self._data[4] + 5 - len(self._data)
 
     def encode_message(self, msg_type, serial, data):
         self._state = Message.MSG_FULL
