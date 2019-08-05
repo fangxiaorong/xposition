@@ -69,14 +69,13 @@ class Message(object):
     MSG_PART = 2
     MSG_FULL = 3
 
-    def __init__(self):
+    def __init__(self, msg_type=None, serial=None, data=None):
         super(Message, self).__init__()
-        self._state = Message.MSG_PART
-        self._data = None
-
-    def __init__(self, msg_type, serial, data=None):
-        super(Message, self).__init__()
-        self.encode_message(msg_type, serial, data)
+        if msg_type is None:
+            self._state = Message.MSG_PART
+            self._data = None
+        else:
+            self.encode_message(msg_type, serial, data)
 
     def get_need_bytes(self):
         pass
@@ -232,6 +231,7 @@ class GPSServer(TCPServer):
             GPSInfoHandler,
             HeartHandler,
         ])
+        LinkMessage()
 
     def handle_stream(self, stream, address):
         print("New connection :", address, stream)
