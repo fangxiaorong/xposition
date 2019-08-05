@@ -118,11 +118,11 @@ class Reader(object):
         self._read_loop(None)
 
     def _read_loop(self, data):
-        print(data)
         size = self.message.add_data(data)
         if self.message.get_state() == Message.MSG_FULL:
             self.callback(self.message)
             self.message.clean()
+        print(data, size)
         self.read_data(size)
 
     def read_data(self, size):
@@ -133,7 +133,7 @@ class LinkMessage(Message):
     def get_need_bytes(self):
         if self._data is None or self.get_state() == Message.MSG_FULL:
             return 7
-        return (self._data[3] << 4 + self._data[4] + 3) - len(self._data)
+        return (self._data[3] << 4) + self._data[4] + 3 - len(self._data)
 
     def encode_message(self, msg_type, serial, data):
         self._state = Message.MSG_FULL
