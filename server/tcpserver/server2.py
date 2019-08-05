@@ -18,7 +18,7 @@ class MessageHandler(object):
     def __init__(self):
         super(MessageHandler, self).__init__()
 
-    def utc2local(utc_st):
+    def utc2local(self, utc_st):
         now_stamp = time.time()
         local_time = datetime.fromtimestamp(now_stamp)
         utc_time = datetime.utcfromtimestamp(now_stamp)
