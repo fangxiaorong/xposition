@@ -28,12 +28,12 @@ class LoginHandler(MessageHandler):
         super(LoginHandler, self).__init__()
 
     def handler(self, device, message, serial):
-        imei, language, timezone = struct.unpack('!8sBB', message)
+        imei, language = struct.unpack('!8sB', message)
         _imei = hex_str(imei)
 
         device.imei = _imei
 
-        print('receive login', _imei, language, timezone)
+        print('receive login', _imei, language)
 
         data = struct.pack('!L', int(datetime.utcnow().timestamp()))
         return Message(LoginHandler.MSG_TYPE, serial, data), device.EVENT_INIT
