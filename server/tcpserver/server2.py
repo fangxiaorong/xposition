@@ -38,41 +38,54 @@ class Message(object):
         self._state = Message.MSG_PART
         self._data = None
 
-    def get_needs_bytes(self):
+    def get_need_bytes(self):
         pass
 
     def add_data(self, data):
-        if self._state == Message.MSG_PART:
-            if self._data == None:
+        if self._data == None:
+            self._data = data
+        else:
+            self._data += data
 
+        need_bytes = self.get_need_bytes()
+        if need_bytes == 0:
+            self._state = Message.MSG_FULL
+            need_bytes = self.get_need_bytes()
+        return need_bytes
+
+    def get_state(self):
+        return self._state
 
     def clean(self):
         self._data = None
         self._state = Message.MSG_PART
 
 class Reader(object):
-    def __init__(self, stream, message):
+    def __init__(self, stream, message, callback):
         super(Reader, self).__init__()
         self.stream = stream
         self.message = message
+        self.callback = callback
 
-    def read_loop(self, data, callback):
-        if self.message.get_needs_bytes() != len(data):
-            pass
+    def _read_loop(self, data):
+        size = self.message.add_data(data)
+        if self.message.get_state() == Message.MSG_FULL:
+            self.callback(self.message)
+            self.message.clean()
+        self.read_data(size)
+
+    def read_data(self, size):
+        pass
 
 class LinkMessage(Message):
-    def get_needs_bytes(self):
-        if self._data is None:
+    def get_need_bytes(self):
+        if self._data is None or self.get_state() == Message.MSG_FULL:
             return 7
         return (self._data[3] << 4 + self._data[4] + 3) - len(self._data)
 
 class LinkReader(Reader):
-    """docstring for LinkReader"""
-    def __init__(self, stream):
-        super(LinkReader, self).__init__(stream)
-
-
-
+    def read_data(size):
+        self.stream.read_bytes(size, self._read_loop)
 
 class Connection(object):
     clients = set()
@@ -81,7 +94,6 @@ class Connection(object):
         Connection.clients.add(self)
         self._stream = stream
         self._address = address
-        self._message = MessageManager()
         self._stream.set_close_callback(self.on_close)
         print("A new user has entered the chat room.", self._address)
 
@@ -105,18 +117,7 @@ class RobotConnection(Connection):
         super(RobotConnection, self).__init__(stream, address)
         self._send_array = []
         self._device = DeviceInfo()
-        self._handler()
-
-    def _read_loop(self, data):
-        print(data)
-        message = self.resolve_data(data)
-        
-        if message.get_state() == Message.MSG_FULL: # 完整消息处理
-             self._message_handler(message)
-             message.clean()
-
-        if self._stream:
-            self._stream.read_until(b'\r\n', self._read_loop, 1024)
+        self.reader = LinkReader(stream, LinkMessage(), self._message_handler)
 
     def _write_loop(self):
         if len(self._send_array) > 0:
@@ -140,10 +141,6 @@ class RobotConnection(Connection):
     def _send_message(self, message):
         if self._stream:
             self._stream.write(message.get_bytes())
-
-    def _handler(self):
-        self._stream.read_until(b'\r\n', self._read_loop, 1024)
-        self._write_loop()
 
     def _message_handler(self, message):
         length, msg_type, msg, serial = message.parse_message()
