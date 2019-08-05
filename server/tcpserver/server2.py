@@ -36,7 +36,7 @@ class LoginHandler(MessageHandler):
         print('receive login', _imei, language)
 
         data = struct.pack('!L', int(datetime.utcnow().timestamp()))
-        return Message(LoginHandler.MSG_TYPE, serial, data), device.EVENT_INIT
+        return LinkMessage(LoginHandler.MSG_TYPE, serial, data), device.EVENT_INIT
 
 
 class GPSInfoHandler(MessageHandler):
