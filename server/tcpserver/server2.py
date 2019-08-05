@@ -1,6 +1,7 @@
 #!/usr/bin/python
 #coding:utf-8
 
+import time
 import struct
 from datetime import datetime
 from tornado.tcpserver import TCPServer
@@ -16,6 +17,14 @@ from backends import ExamCalculate
 class MessageHandler(object):
     def __init__(self):
         super(MessageHandler, self).__init__()
+
+    def utc2local(utc_st):
+        now_stamp = time.time()
+        local_time = datetime.fromtimestamp(now_stamp)
+        utc_time = datetime.utcfromtimestamp(now_stamp)
+        offset = local_time - utc_time
+        local_st = utc_st + offset
+        return datetime.fromtimestamp(local_st)
 
     def handler(self, device, message, serial):
         pass
@@ -33,7 +42,7 @@ class LoginHandler(MessageHandler):
 
         device.imei = _imei
 
-        print('receive login', _imei, language)
+        print('receive login:', _imei, language)
 
         data = struct.pack('!L', int(datetime.utcnow().timestamp()))
         return LinkMessage(LoginHandler.MSG_TYPE, serial, data), device.EVENT_INIT
@@ -45,13 +54,13 @@ class GPSInfoHandler(MessageHandler):
     def handler(self, device, message, serial):
         time, latitude, longitude, speed, direction, base, state = struct.unpack('!LLLBH9sB', message)
 
-        time = datetime.utcfromtimestamp(time)
+        time = self.utc2local(time)
         longitude = longitude / 30000 / 60
         latitude = latitude / 30000 / 60
 
         latitude, longitude = ExamCalculate.gps_to_amap(latitude, longitude)
 
-        print(time, longitude, latitude, speed, direction)
+        print('receive gps:', time, longitude, latitude, speed, direction)
 
         return None, None
 
@@ -60,9 +69,46 @@ class HeartHandler(MessageHandler):
     MSG_TYPE = 0x03
 
     def handler(self, device, message, serial):
-        print(message)
+        print('receive heart:', message)
 
-        return Message(HeartHandler.MSG_TYPE, serial), None
+        return LinkMessage(HeartHandler.MSG_TYPE, serial), None
+
+
+class NormalHandler(MessageHandler):
+    MSG_TYPE = 0x12
+
+    def _gps_decode(self, data):
+        latitude, longitude, altitude, speed, course, satellites =  struct.unpack('!llhHHB', data)
+
+        longitude = longitude / 30000 / 60
+        latitude = latitude / 30000 / 60
+        latitude, longitude = ExamCalculate.gps_to_amap(latitude, longitude)
+
+        return latitude, longitude, altitude, speed, course, satellites
+
+    def _bsid0_decode(self, data):
+        mcc, mnc, lac, ci, rx_lev = struct.unpack('!HHHLB', data)
+
+        return mcc, mnc, lac, ci, rx_lev
+
+    def handler(self, device, message, serial):
+        index = 0
+        time, mask = struct.unpack('!LB', message[index: index + 5])
+        index += 5
+
+        time = self.utc2local(time)
+
+        print('receive normal:', time)
+        if mask & 0x1:
+            latitude, longitude, altitude, speed, course, satellites = self._gps_decode(message[index: index + 15])
+            index += 15
+
+            print('receive normal:', longitude, latitude, altitude, speed, course, satellites)
+
+        if mask & 0x2:
+            index += 11
+
+        return None, None
 
 
 class Message(object):
