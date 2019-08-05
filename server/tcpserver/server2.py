@@ -118,7 +118,11 @@ class NormalHandler(MessageHandler):
 
         print('receive normal:', gps_time, longitude, latitude, altitude, speed, course, satellites)
 
-        return LinkMessage(WarringHandler.MSG_TYPE, serial), None
+        device.longitude = longitude
+        device.latitude = latitude
+        device.speed = speed
+
+        return LinkMessage(NormalHandler.MSG_TYPE, serial), device.EVENT_POSITION
 
 
 class WarringHandler(MessageHandler):
@@ -131,8 +135,13 @@ class WarringHandler(MessageHandler):
 
         print('recevie warring:', gps_time, longitude, latitude, altitude, speed, course, satellites, w_type, status)
 
-        return LinkMessage(WarringHandler.MSG_TYPE, serial), None
+        if longitude is not None and latitude is not None:
+            device.longitude = longitude
+            device.latitude = latitude
+            device.speed = speed
+            return LinkMessage(WarringHandler.MSG_TYPE, serial), device.EVENT_CHECKIN
 
+        return LinkMessage(WarringHandler.MSG_TYPE, serial), None
 
 class Message(object):
     MSG_PART = 2
@@ -265,9 +274,6 @@ class RobotConnection(Connection):
 
     def _event_resolver(self, event):
         if event == self._device.EVENT_INIT:
-            self._send_array.append(self.create_message(0x80, b'GPSON#'))
-            self._send_array.append(self.create_message(0x80, b'TIME|1|1|\x01\x00\x17\x00|||||||]\x01\x00\x17\x00|||||||]\x01\x00\x17\x00|||||||}'))
-
             add_device_record(self._device.imei)
         elif event == self._device.EVENT_POSITION:
             add_device_record(self._device.imei, self._device.latitude, self._device.longitude)
@@ -286,8 +292,8 @@ class RobotConnection(Connection):
             send_msg, event = callback.handler(self._device, content, serial)
             if send_msg:
                 self._send_message(send_msg)
-            # if event:
-            #     self._event_resolver(event)
+            if event:
+                self._event_resolver(event)
         else:
             print(msg_type, 'message handler is not set.')
 
