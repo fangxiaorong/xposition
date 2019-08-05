@@ -146,7 +146,7 @@ class LinkMessage(Message):
         head1, head2, msg_type, msg_len, serial = struct.unpack('!BBBHH', self._data[:7])
         if head1 == 0x67 and head2 == 0x67:
             print('new message....')
-        return msg_len, msg_type, self._data[8:], serial
+        return msg_len, msg_type, self._data[7:], serial
 
 
 class LinkReader(Reader):

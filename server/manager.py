@@ -50,7 +50,26 @@ def xlocation(port):
     server.listen(port) # simple single-process
     IOLoop.instance().start()
 
-cli = click.CommandCollection(sources=[cli1, cli2, cli3])
+@click.group()
+def cli10():
+    pass
+@cli10.command()
+def test():
+    from tornado import ioloop, gen, iostream
+    from tornado.tcpclient import TCPClient
+    @gen.coroutine
+    def Trans():
+        stream = yield TCPClient().connect('localhost', 8003)
+        try:
+            yield stream.write('xxxxxxxx'.encode('utf-8'))
+            back = yield stream.read_bytes(20, partial=True)
+            msg = yield stream.read_bytes(20, partial=True)
+        except iostream.StreamClosedError:
+            pass
+
+    ioloop.IOLoop.current().run_sync(Trans)
+
+cli = click.CommandCollection(sources=[cli1, cli2, cli3, cli10])
 
 if __name__ == '__main__':
     cli()
