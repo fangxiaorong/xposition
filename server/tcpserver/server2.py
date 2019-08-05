@@ -119,10 +119,10 @@ class Reader(object):
 
     def _read_loop(self, data):
         size = self.message.add_data(data)
+        print(data, size)
         if self.message.get_state() == Message.MSG_FULL:
             self.callback(self.message)
             self.message.clean()
-        print(data, size)
         self.read_data(size)
 
     def read_data(self, size):
