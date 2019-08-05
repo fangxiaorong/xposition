@@ -24,7 +24,43 @@ class MessageHandler(object):
         utc_time = datetime.utcfromtimestamp(now_stamp)
         offset = local_time - utc_time
         local_st = utc_st + offset
-        return datetime.fromtimestamp(local_st)
+        return local_st
+
+    def position_decode(self, message):
+        index = 0
+        gps_time, mask = struct.unpack('!LB', message[index: index + 5])
+        index += 5
+
+        gps_time = self.utc2local(datetime.fromtimestamp(gps_time))
+
+        latitude, longitude, altitude, speed, course, satellites = None, None, None, None, None, None
+        if mask & 0x1:  # gps
+            latitude, longitude, altitude, speed, course, satellites = struct.unpack('!llhHHB', message[index: index + 15])
+            index += 15
+
+            longitude = longitude / 30000 / 60
+            latitude = latitude / 30000 / 60
+            latitude, longitude = ExamCalculate.gps_to_amap(latitude, longitude)
+
+        if mask & 0x2:  # BSID0
+            index += 11
+
+        if mask & 0x4:  # BSID1
+            index += 7
+
+        if mask & 0x8:  # BSID2
+            index += 7
+
+        if mask & 0x10:  # BSS0
+            index += 7
+
+        if mask & 0x20:  # BSS1
+            index += 7
+
+        if mask & 0x40:  # BSS2
+            index += 7
+
+        return index, gps_time, latitude, longitude, altitude, speed, course, satellites
 
     def handler(self, device, message, serial):
         pass
@@ -52,9 +88,9 @@ class GPSInfoHandler(MessageHandler):
     MSG_TYPE = 0x02
 
     def handler(self, device, message, serial):
-        time, latitude, longitude, speed, direction, base, state = struct.unpack('!LLLBH9sB', message)
+        gps_time, latitude, longitude, speed, direction, base, state = struct.unpack('!LLLBH9sB', message)
 
-        time = self.utc2local(time)
+        gps_time = self.utc2local(datetime.fromtimestamp(gps_time))
         longitude = longitude / 30000 / 60
         latitude = latitude / 30000 / 60
 
@@ -77,38 +113,25 @@ class HeartHandler(MessageHandler):
 class NormalHandler(MessageHandler):
     MSG_TYPE = 0x12
 
-    def _gps_decode(self, data):
-        latitude, longitude, altitude, speed, course, satellites =  struct.unpack('!llhHHB', data)
+    def handler(self, device, message, serial):
+        index, gps_time, latitude, longitude, altitude, speed, course, satellites = self.position_decode(message)
 
-        longitude = longitude / 30000 / 60
-        latitude = latitude / 30000 / 60
-        latitude, longitude = ExamCalculate.gps_to_amap(latitude, longitude)
+        print('receive normal:', gps_time, longitude, latitude, altitude, speed, course, satellites)
 
-        return latitude, longitude, altitude, speed, course, satellites
+        return LinkMessage(WarringHandler.MSG_TYPE, serial), None
 
-    def _bsid0_decode(self, data):
-        mcc, mnc, lac, ci, rx_lev = struct.unpack('!HHHLB', data)
 
-        return mcc, mnc, lac, ci, rx_lev
+class WarringHandler(MessageHandler):
+    MSG_TYPE = 0x14
 
     def handler(self, device, message, serial):
-        index = 0
-        time, mask = struct.unpack('!LB', message[index: index + 5])
-        index += 5
+        index, gps_time, latitude, longitude, altitude, speed, course, satellites = self.position_decode(message)
 
-        time = self.utc2local(time)
+        w_type, status = struct.unpack('!BH', message[index:])
 
-        print('receive normal:', time)
-        if mask & 0x1:
-            latitude, longitude, altitude, speed, course, satellites = self._gps_decode(message[index: index + 15])
-            index += 15
+        print('recevie warring:', gps_time, longitude, latitude, altitude, speed, course, satellites, w_type, status)
 
-            print('receive normal:', longitude, latitude, altitude, speed, course, satellites)
-
-        if mask & 0x2:
-            index += 11
-
-        return None, None
+        return LinkMessage(WarringHandler.MSG_TYPE, serial), None
 
 
 class Message(object):
@@ -278,6 +301,7 @@ class GPSServer(TCPServer):
             GPSInfoHandler,
             HeartHandler,
             NormalHandler,
+            WarringHandler,
         ])
         LinkMessage()
 
