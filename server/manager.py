@@ -3,7 +3,8 @@
 
 import click
 
-from tcpserver.server import GPSServer, TestServer
+from tcpserver.server import GPSServer
+from tcpserver.server2 import GPSServer as TestServer
 from tornado.ioloop  import IOLoop
 
 from backends.server import app
