@@ -66,9 +66,9 @@ class CursorManager(object):
         self._cursor.close()
 
 def init_db():
-    with conn:
+    with conn.cursor() as cursor:
         # 考试表 state: (1: 初始化， 2: 考试)
-        conn.execute('''
+        cursor.execute('''
             CREATE TABLE exam (
                 id INTEGER PRIMARY KEY,
                 name VARCHAR(40) UNIQUE,
@@ -88,7 +88,7 @@ def init_db():
             );
         ''');
         # 考试用户表
-        conn.execute('''
+        cursor.execute('''
             CREATE TABLE exam_user (
                 id INTEGER PRIMARY KEY,
                 exam_id INTEGER,
@@ -101,11 +101,11 @@ def init_db():
                 create_time TIMESTAMP
             );
         ''');
-        conn.execute('CREATE INDEX exam_user_exam ON exam_user (exam_id);')
-        conn.execute('CREATE INDEX exam_user_line ON exam_user (line_id);')
-        conn.execute('CREATE INDEX exam_user_device ON exam_user (device_id);')
+        cursor.execute('CREATE INDEX exam_user_exam ON exam_user (exam_id);')
+        cursor.execute('CREATE INDEX exam_user_line ON exam_user (line_id);')
+        cursor.execute('CREATE INDEX exam_user_device ON exam_user (device_id);')
         # 考试路线表
-        conn.execute('''
+        cursor.execute('''
             CREATE TABLE exam_line (
                 id INTEGER PRIMARY KEY,
                 name VARCHAR(20) UNIQUE,
@@ -115,7 +115,7 @@ def init_db():
             );
         ''')
         # 后台用户表
-        conn.execute('''
+        cursor.execute('''
             CREATE TABLE user (
                 id INTEGER PRIMARY KEY,
                 username VARCHAR(20) UNIQUE,
@@ -129,7 +129,7 @@ def init_db():
         ''')
 
         # 创建记录
-        conn.execute('''
+        cursor.execute('''
             INSERT INTO user (username, nickname, password, valid, create_time, update_time) values
             (?, ?, ?, ?, ?, ?)
         ''', ('admin', '管理员', hashlib.md5(b'123456').hexdigest(), 1, datetime.now().isoformat(), datetime.now().isoformat()))
