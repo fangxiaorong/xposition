@@ -8,10 +8,20 @@ import json
 import math
 
 import sqlite3
+import MySQLdb
 import redis
 
+import settings
 
-conn = sqlite3.connect('server/db/main.db')
+try:
+    config = settings.DB_CONFIG.get('default') if hasattr(settings, 'DB_CONFIG') else {}
+    if config.get('type') == 'sqlite':
+        conn = sqlite3.connect(config.get('path', 'server/db/main.db'))
+    elif config.get('type') == 'mysql':
+        conn = MySQLdb.connect(config.get('host'), config.get('username'), config.get('password'), config.get('db'), charset='utf8')
+except Exception as e:
+    raise e
+
 r_conn = redis.Redis()
 
 sql_result_map = {
