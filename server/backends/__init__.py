@@ -521,8 +521,9 @@ class UserRecord(BaseTable):
                     r_conn.rpush(key, pos_str)
 
     def query_records(self, user_id, max_id=None, start=None, end=None, **kwargs):
-        result = []
+        result = None
         if r_conn.hexists(self.active_user_info_key, user_id):
+            result = []
             with CursorManager() as cursor:
                 if kwargs:
                     val = [(kv[0] + '="' + str(kv[1]) + '"') for kv in kwargs.items()]
@@ -840,6 +841,8 @@ class ExamCalculate(object):
 
                 line_info = self._conver_line_info(line_info)
                 records = table_manager(UserRecord, str(active_id)).query_records(user_info.get('id'), manual=1)
+                if records is None:
+                    continue
 
                 # >>>>>>>>
                 for record in records:
