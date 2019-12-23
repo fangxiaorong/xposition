@@ -12,7 +12,7 @@
           </div>   
            <!-- App Footer -->
           <v-footer height="auto" class="white pa-3 app--footer">
-            <span class="caption">fit Design &copy; {{ new Date().getFullYear() }}</span>
+            <span class="caption">陆军装甲兵学院 &copy; {{ new Date().getFullYear() }}</span>
           </v-footer>
         </v-content>
         <!-- Go to top -->
