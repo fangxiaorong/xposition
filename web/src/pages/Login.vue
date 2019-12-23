@@ -7,7 +7,7 @@
             <v-card class="elevation-1 pa-3">
               <v-card-text>
                 <div class="layout column align-center">
-                  <img src="/static/m.png" alt="Vue Material Admin" width="120" height="120">
+                  <img src="/static/logo.png" alt="Vue Material Admin" width="120" height="120">
                   <h1 class="flex my-4 primary--text">用户登陆</h1>
                   <div style="color: red;">{{ message }}</div>
                 </div>                
