@@ -19,6 +19,7 @@ public class ServerRequest {
 //    String baseUrl = "http://10.253.102.125:8002";
 //    String baseUrl = "http://192.168.0.102:8002";
     String baseUrl = "http://212.64.26.210";
+//    String baseUrl = "http://39.97.237.240";
 
     public ServerRequest(Context context) {
         client = new OkHttpClient.Builder()
@@ -104,6 +105,11 @@ public class ServerRequest {
                 .add("level4", "" + level4)
                 .build();
         Request request = new Request.Builder().url(baseUrl + "/api/manager/user/results").post(body).build();
+        client.newCall(request).enqueue(callback);
+    }
+
+    public void getExams(Callback callback) {
+        Request request = new Request.Builder().url(baseUrl + "/api/manager/exams").build();
         client.newCall(request).enqueue(callback);
     }
 

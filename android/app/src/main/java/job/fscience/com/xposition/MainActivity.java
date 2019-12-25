@@ -26,6 +26,8 @@ import job.fscience.com.lib.BaseActivity;
 import job.fscience.com.lib.MapMarkManager;
 import job.fscience.com.lib.SlidingUpPanelLayout;
 import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.Response;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -42,6 +44,8 @@ public class MainActivity extends BaseActivity implements CompoundButton.OnCheck
     private ArrayList<Marker> examMarks = null;
     private MapMarkManager markManager = null;
 
+    private JSONObject currentExamInfo = null;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -55,10 +59,6 @@ public class MainActivity extends BaseActivity implements CompoundButton.OnCheck
         //地图模式可选类型：MAP_TYPE_NORMAL,MAP_TYPE_SATELLITE,MAP_TYPE_NIGHT
         mMap.setMapType(AMap.MAP_TYPE_NORMAL);
         markManager = new MapMarkManager(this, mMap);
-
-        ((TextView) findViewById(R.id.head)).setText(
-                XApplication.userInfo.getString("nickname") +
-                        "(" + XApplication.examInfo.getString("name") + ")");
 
         mLayout = (SlidingUpPanelLayout) findViewById(R.id.sliding_layout);
         mLayout.setPanelSlideListener(new SlidingUpPanelLayout.PanelSlideListener() {
@@ -97,24 +97,24 @@ public class MainActivity extends BaseActivity implements CompoundButton.OnCheck
         });
         mLayout.setAnchorPoint(0.5f);//用来测试锚点功能
 
-        XApplication.getServerInstance().managerGetExam(new AuthCallback() {
-            @Override
-            public void onFailureEx(Call call, IOException e) {
-                showTextOnUIThread("网络问题");
-            }
-
-            @Override
-            public void onResponseEx(JSONObject data) throws IOException {
-                if (data == null) {
-                    showTextOnUIThread("服务器问题");
-                } else if (data.getInteger("state") == 1) {
-                    data.getJSONArray("positions");
-                    System.out.println(data);
-                } else {
-                    showTextOnUIThread(data.getString("message"));
-                }
-            }
-        });
+//        XApplication.getServerInstance().managerGetExam(new AuthCallback() {
+//            @Override
+//            public void onFailureEx(Call call, IOException e) {
+//                showTextOnUIThread("网络问题");
+//            }
+//
+//            @Override
+//            public void onResponseEx(JSONObject data) throws IOException {
+//                if (data == null) {
+//                    showTextOnUIThread("服务器问题");
+//                } else if (data.getInteger("state") == 1) {
+//                    data.getJSONArray("positions");
+//                    System.out.println(data);
+//                } else {
+//                    showTextOnUIThread(data.getString("message"));
+//                }
+//            }
+//        });
 
         // 格式设置
         TextView headTextView = (TextView)findViewById(R.id.head);
@@ -131,55 +131,6 @@ public class MainActivity extends BaseActivity implements CompoundButton.OnCheck
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long itemId) {
                 selectUser((int) itemId);
-            }
-        });
-
-//        XApplication.getServerInstance().managerGetExam(new AuthCallback() {
-//            @Override
-//            public void onFailureEx(Call call, IOException e) {
-//                showTextOnUIThread("网络问题");
-//            }
-//
-//            @Override
-//            public void onResponseEx(final JSONObject data) throws IOException {
-//                if (data == null) {
-//                    showTextOnUIThread("服务器问题");
-//                } else if (data.getInteger("state") == 1) {
-//                    runOnUiThread(new Runnable() {
-//                        @Override
-//                        public void run() {
-//                            adapter.updateData(data.getJSONArray("users"));
-//                            showPosition(data.getJSONArray("users"));
-//                        }
-//                    });
-//
-//                } else {
-//                    showTextOnUIThread(data.getString("message"));
-//                }
-//            }
-//        });
-        XApplication.getServerInstance().managerGetExamUsers(XApplication.examInfo.getInteger("id"), new AuthCallback() {
-            @Override
-            public void onFailureEx(Call call, IOException e) {
-                showTextOnUIThread("网络问题");
-            }
-
-            @Override
-            public void onResponseEx(final JSONObject data) throws IOException {
-                if (data == null) {
-                    showTextOnUIThread("服务器问题");
-                } else if (data.getInteger("state") == 1) {
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            adapter.updateData(data.getJSONArray("users"));
-//                            showPosition(data.getJSONArray("users"));
-                        }
-                    });
-
-                } else {
-                    showTextOnUIThread(data.getString("message"));
-                }
             }
         });
 
@@ -229,6 +180,48 @@ public class MainActivity extends BaseActivity implements CompoundButton.OnCheck
             @Override
             public void onClick(View view) {
                 startPlay();
+            }
+        });
+
+        findViewById(R.id.head).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                showExamSelectDialog();
+            }
+        });
+
+        loadExam(XApplication.examInfo);
+    }
+
+    private void loadExam (JSONObject exam) {
+        currentExamInfo = exam;
+
+        ((TextView) findViewById(R.id.head)).setText(
+                XApplication.userInfo.getString("nickname") +
+                        "(" + currentExamInfo.getString("name") + ")");
+
+        XApplication.getServerInstance().managerGetExamUsers(currentExamInfo.getInteger("id"), new AuthCallback() {
+            @Override
+            public void onFailureEx(Call call, IOException e) {
+                showTextOnUIThread("网络问题");
+            }
+
+            @Override
+            public void onResponseEx(final JSONObject data) throws IOException {
+                if (data == null) {
+                    showTextOnUIThread("服务器问题");
+                } else if (data.getInteger("state") == 1) {
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            adapter.updateData(data.getJSONArray("users"));
+//                            showPosition(data.getJSONArray("users"));
+                        }
+                    });
+
+                } else {
+                    showTextOnUIThread(data.getString("message"));
+                }
             }
         });
 
@@ -526,6 +519,30 @@ public class MainActivity extends BaseActivity implements CompoundButton.OnCheck
             @Override
             public void run() {
                 Toast.makeText(MainActivity.this, message, Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+
+    private void showExamSelectDialog() {
+        XApplication.getServerInstance().getExams(new AuthCallback() {
+            @Override
+            public void onFailureEx(Call call, IOException e) {
+                showTextOnUIThread("网络问题");
+            }
+
+            @Override
+            public void onResponseEx(final JSONObject data) throws IOException {
+                if (data == null) {
+                    showTextOnUIThread("服务器问题");
+                } else {
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            ExamSelectDialog dialog = new ExamSelectDialog(MainActivity.this, data.getJSONArray("exams"), data.getInteger("active_exam_id"));
+                            dialog.show();
+                        }
+                    });
+                }
             }
         });
     }

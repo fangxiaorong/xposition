@@ -377,6 +377,19 @@ class ManagerUserResults(web.RequestHandler):
         })
         self.write(json.dumps(data))
 
+@app.route(r'/api/manager/exams')
+class AdminGetExams(BaseHandler):
+    @auth_check
+    def get(self):
+        with CursorManager() as cursor:
+            exam = table_manager(Exam)
+            exam_infos, active_exam_id = exam.query_records(cursor, state=2)
+            self.write(json.dumps({
+                'state': 1,
+                'message': '成功',
+                'exams': exam_infos,
+                'active_exam_id': active_exam_id,
+            }))
 # Web后台管理接口
 
 @app.route(r'/api/admin/login')
