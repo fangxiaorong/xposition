@@ -7,6 +7,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.BaseAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -16,11 +17,15 @@ import com.alibaba.fastjson.JSONObject;
 public class ExamSelectDialog extends Dialog {
     JSONArray exams;
     int activeExamId;
+    int currentExamId;
+    AdapterView.OnItemClickListener listener;
 
-    public ExamSelectDialog(@NonNull Context context, JSONArray exams, Integer activeExamId) {
+    public ExamSelectDialog(@NonNull Context context, JSONArray exams, Integer activeExamId, Integer currentExamId, AdapterView.OnItemClickListener listener) {
         super(context);
         this.exams = exams;
         this.activeExamId = activeExamId;
+        this.currentExamId = currentExamId;
+        this.listener = listener;
     }
 
     public ExamSelectDialog(@NonNull Context context, int themeResId) {
@@ -39,6 +44,13 @@ public class ExamSelectDialog extends Dialog {
         ListView examListView = (ListView) findViewById(R.id.exam_list);
         ExamListAdapter adapter = new ExamListAdapter();
         examListView.setAdapter(adapter);
+        examListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                listener.onItemClick(adapterView, view, i, l);
+                ExamSelectDialog.this.dismiss();
+            }
+        });
     }
 
     class ExamListAdapter extends BaseAdapter {
@@ -86,6 +98,11 @@ public class ExamSelectDialog extends Dialog {
                 holder.activateView.setVisibility(View.VISIBLE);
             } else {
                 holder.activateView.setVisibility(View.INVISIBLE);
+            }
+            if (itemData.getInteger("id") == currentExamId) {
+                holder.currentView.setVisibility(View.VISIBLE);
+            } else {
+                holder.currentView.setVisibility(View.INVISIBLE);
             }
             holder.nameView.setText(itemData.getString("name"));
 

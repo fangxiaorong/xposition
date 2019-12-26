@@ -24,16 +24,27 @@ public class UsersActivity extends BaseActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_users);
 
+        JSONObject exam = JSONObject.parseObject(getIntent().getStringExtra("data"));
+        exam.getInteger("id");
         ListView userListView = (ListView)findViewById(R.id.user_list);
         adapter = new UsersAdapter();
         userListView.setAdapter(adapter);
 
-        findViewById(R.id.calculate).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                reCalculate();
-            }
-        });
+
+        if (exam.getInteger("id") != XApplication.examInfo.getInteger("id")) {
+            findViewById(R.id.calculate).setVisibility(View.GONE);
+            findViewById(R.id.level1).setEnabled(false);
+            findViewById(R.id.level2).setEnabled(false);
+            findViewById(R.id.level3).setEnabled(false);
+            findViewById(R.id.level4).setEnabled(false);
+        } else {
+            findViewById(R.id.calculate).setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    reCalculate();
+                }
+            });
+        }
         findViewById(R.id.export).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -48,7 +59,7 @@ public class UsersActivity extends BaseActivity {
             }
         });
 
-        XApplication.getServerInstance().managerGetResults(new AuthCallback() {
+        XApplication.getServerInstance().managerGetResults(exam.getInteger("id"), new AuthCallback() {
             @Override
             public void onFailureEx(Call call, IOException e) {
                 showTextOnUIThread("网络问题！");

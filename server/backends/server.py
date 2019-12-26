@@ -331,15 +331,14 @@ class ManagerGetUserResult(web.RequestHandler):
         print(data)
         self.write(json.dumps(data))
 
-@app.route(r'/api/manager/user/results')
+@app.route(r'/api/manager/user/results/(\d+)')
 class ManagerUserResults(web.RequestHandler):
-    def get(self):
+    def get(self, exam_id):
         results = {}
 
-        active_id = table_manager(Exam).get_active_id()
-        if active_id > 0:
+        if exam_id > 0:
             with CursorManager() as cursor:
-                exam_info, active_id = table_manager(Exam).query_record(cursor, id=active_id)
+                exam_info, _ = table_manager(Exam).query_record(cursor, id=exam_id)
                 level1 = exam_info.get('level1') or 0
                 level2 = exam_info.get('level2') or 0
                 level3 = exam_info.get('level3') or 0
@@ -349,7 +348,7 @@ class ManagerUserResults(web.RequestHandler):
                 results.update({'examname': exam_info.get('name'),'level1': level1, 'level2': level2, 'level3': level3, 'level4': level4})
 
                 if level1 > 0 and level2 > 0 and level3 > 0 and level4 > 0:
-                    user_info_list = table_manager(ExamUser).query_detail_records(cursor, exam_id=active_id)
+                    user_info_list = table_manager(ExamUser).query_detail_records(cursor, exam_id=exam_id)
                     users = []
                     for user_info in user_info_list:
                         if not user_info.get('detail'):

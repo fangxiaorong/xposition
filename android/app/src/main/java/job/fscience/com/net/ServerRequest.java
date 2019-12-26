@@ -92,8 +92,8 @@ public class ServerRequest {
         client.newCall(request).enqueue(callback);
     }
 
-    public void managerGetResults(Callback callback) {
-        Request request = new Request.Builder().url(baseUrl + "/api/manager/user/results").build();
+    public void managerGetResults(int examId, Callback callback) {
+        Request request = new Request.Builder().url(baseUrl + "/api/manager/user/results/" + examId).build();
         client.newCall(request).enqueue(callback);
     }
 

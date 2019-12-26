@@ -30,6 +30,7 @@ import okhttp3.Callback;
 import okhttp3.Response;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -168,6 +169,7 @@ public class MainActivity extends BaseActivity implements CompoundButton.OnCheck
             public void onClick(View view) {
                 if (selectedUserId == -1) {
                     Intent intent = new Intent(MainActivity.this, UsersActivity.class);
+                    intent.putExtra("data", currentExamInfo.toJSONString());
                     startActivity(intent);
                 } else {
                     Intent intent = new Intent(MainActivity.this, AttributeActivity.class);
@@ -224,6 +226,8 @@ public class MainActivity extends BaseActivity implements CompoundButton.OnCheck
                 }
             }
         });
+
+        unSelectUser(true);
 
         updatePosition();
     }
@@ -538,7 +542,19 @@ public class MainActivity extends BaseActivity implements CompoundButton.OnCheck
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            ExamSelectDialog dialog = new ExamSelectDialog(MainActivity.this, data.getJSONArray("exams"), data.getInteger("active_exam_id"));
+                            ExamSelectDialog dialog = new ExamSelectDialog(MainActivity.this,
+                                    data.getJSONArray("exams"),
+                                    data.getInteger("active_exam_id"),
+                                    currentExamInfo.getIntValue("id"),
+                                    new AdapterView.OnItemClickListener() {
+                                @Override
+                                public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                                    JSONObject exam = (JSONObject) adapterView.getItemAtPosition(i);
+                                    if (exam.getInteger("id") != MainActivity.this.currentExamInfo.getInteger("id")) {
+                                        MainActivity.this.loadExam(exam);
+                                    }
+                                }
+                            });
                             dialog.show();
                         }
                     });
