@@ -234,7 +234,7 @@ class ManagerGetLocations(web.RequestHandler):
         exam_id = int(exam_id)
 
         exam_user = table_manager(ExamUser)
-        locations = exam_user.query_locations()
+        locations = exam_user.query_locations(exam_id)
         if locations:
             self.write(json.dumps({
                 'state': 1,
