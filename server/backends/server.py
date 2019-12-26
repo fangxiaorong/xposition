@@ -336,6 +336,7 @@ class ManagerUserResults(web.RequestHandler):
     def get(self, exam_id):
         results = {}
 
+        exam_id = int(exam_id)
         if exam_id > 0:
             with CursorManager() as cursor:
                 exam_info, _ = table_manager(Exam).query_record(cursor, id=exam_id)
