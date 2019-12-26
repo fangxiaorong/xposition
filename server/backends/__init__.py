@@ -423,7 +423,7 @@ class ExamUser(BaseTable):
             with CursorManager() as cursor:
                 users = self.query_records(cursor, exam_id=exam_id)
                 user_map = {}
-                for user in user:
+                for user in users:
                     user_map.update({user.get('id'): user})
                 cursor.execute('select * from user_record_%d where id in (select max(id) from user_record_%d group by user_id);' % (exam_id, exam_id))
                 pos_arr = cursor.fetchall()
