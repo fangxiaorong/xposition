@@ -227,10 +227,12 @@ class ManagerGetExam(BaseHandler):
                 'message': '考试未设置',
             }))
 
-@app.route(r'/api/manager/locations')
+@app.route(r'/api/manager/locations/(\d+)')
 class ManagerGetLocations(web.RequestHandler):
     @auth_check
-    def get(self):
+    def get(self, exam_id):
+        exam_id = int(exam_id)
+
         exam_user = table_manager(ExamUser)
         locations = exam_user.query_locations()
         if locations:

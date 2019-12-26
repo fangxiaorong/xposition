@@ -76,8 +76,8 @@ public class ServerRequest {
         client.newCall(request).enqueue(callback);
     }
 
-    public void managerGetLocations(Callback callback) {
-        Request request = new Request.Builder().url(baseUrl + "/api/manager/locations").build();
+    public void managerGetLocations(int examId, Callback callback) {
+        Request request = new Request.Builder().url(baseUrl + "/api/manager/locations/" + examId).build();
         client.newCall(request).enqueue(callback);
     }
 

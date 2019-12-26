@@ -402,21 +402,37 @@ class ExamUser(BaseTable):
         else:
             r_conn.delete(user_record.active_user_info_key)
 
-    def query_locations(self):
+    def query_locations(self, exam_id):
         result = []
 
-        user_pos_arr = r_conn.hgetall('active_user_info')
-        current_time = time.time()
-        for user_pos in user_pos_arr.values():
-            user_pos = user_pos.decode('utf-8')
-            if user_pos != '':
-                pos_info = json.loads(user_pos)
-                tmp_time = float(pos_info.get('create_time')) if pos_info.get('create_time') else 0
-                if current_time - tmp_time < 300:
-                    pos_info.update({'state': 1})
-                else:
-                    pos_info.update({'state': 2})
-                result.append(pos_info)
+        active_id = table_manager(Exam).get_active_id()
+        if active_id == exam_id:
+            user_pos_arr = r_conn.hgetall('active_user_info')
+            current_time = time.time()
+            for user_pos in user_pos_arr.values():
+                user_pos = user_pos.decode('utf-8')
+                if user_pos != '':
+                    pos_info = json.loads(user_pos)
+                    tmp_time = float(pos_info.get('create_time')) if pos_info.get('create_time') else 0
+                    if current_time - tmp_time < 300:
+                        pos_info.update({'state': 1})
+                    else:
+                        pos_info.update({'state': 2})
+                    result.append(pos_info)
+        else:
+            with CursorManager() as cursor:
+                users = self.query_records(cursor, exam_id=exam_id)
+                user_map = {}
+                for user in user:
+                    user_map.update({user.get('id'): user})
+                cursor.execute('select * from user_record_%d where id in (select max(id) from user_record_%d group by user_id);' % (exam_id, exam_id))
+                pos_arr = cursor.fetchall()
+                for pos in pos_arr:
+                    user = user_map.get(pos.get('user_id'))
+                    if user:
+                        pos.update({'line_id': user.get('line_id'), 'username': user.get('username')})
+                    pos.update({'state': 2})
+                    result.append(pos)
 
         return result
 

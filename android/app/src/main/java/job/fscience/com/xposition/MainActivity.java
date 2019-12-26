@@ -241,7 +241,9 @@ public class MainActivity extends BaseActivity implements CompoundButton.OnCheck
                     @Override
                     public void onFailureEx(Call call, IOException e) {
                         showTextOnUIThread("网络问题");
-                        updatePosition();
+                        if (currentExamInfo.getInteger("id") == XApplication.examInfo.getInteger("id")) {
+                            updatePosition();
+                        }
                     }
 
                     @Override
@@ -260,7 +262,10 @@ public class MainActivity extends BaseActivity implements CompoundButton.OnCheck
                         } else {
                             showTextOnUIThread(object.getString("message"));
                         }
-                        updatePosition();
+
+                        if (currentExamInfo.getInteger("id") == XApplication.examInfo.getInteger("id")) {
+                            updatePosition();
+                        }
                     }
                 });
             }
