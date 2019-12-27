@@ -291,9 +291,10 @@ class ManagerGetUserTrack(BaseHandler):
             exam_users_info = table_manager(ExamUser).query_detail_records(cursor, id=user_id)
             if exam_users_info:
                 line_id = exam_users_info[0].get('line_id')
-                if line_id and line_id > 0:
-                    exam_line_info = table_manager(ExamLine).query_postion_record(cursor, id=exam_users_info[0].get('line_id'))
-                    user_record = table_manager(UserRecord, str(exam_users_info[0].get('exam_id')))
+                exam_id = exam_users_info[0].get('exam_id')
+                if line_id and line_id > 0 and exam_id and exam_id > 0:
+                    exam_line_info = table_manager(ExamLine).query_postion_record(cursor, id=line_id)
+                    user_record = table_manager(UserRecord, str(exam_id))
                     points = user_record.query_records(int(user_id), start=start / 1000.0, end=end / 1000.0)
                     if points is None or len(points) <= 0:
                         self.write(json.dumps({
@@ -313,7 +314,11 @@ class ManagerGetUserTrack(BaseHandler):
                         'state': 10,
                         'message': '用户未设置考试信息'
                     }))
-
+            else:
+                self.write(json.dumps({
+                    'state': 10,
+                    'message': '用户未找到'
+                }))
         # exam_id = table_manager(Exam).get_active_id()
         # table_manager(ExamUser)
         # if exam_id:
