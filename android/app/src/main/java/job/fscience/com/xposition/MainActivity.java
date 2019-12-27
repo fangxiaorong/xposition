@@ -26,11 +26,8 @@ import job.fscience.com.lib.BaseActivity;
 import job.fscience.com.lib.MapMarkManager;
 import job.fscience.com.lib.SlidingUpPanelLayout;
 import okhttp3.Call;
-import okhttp3.Callback;
-import okhttp3.Response;
 
 import java.io.IOException;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -198,6 +195,8 @@ public class MainActivity extends BaseActivity implements CompoundButton.OnCheck
     private void loadExam (JSONObject exam) {
         currentExamInfo = exam;
 
+        unSelectUser(true);
+
         ((TextView) findViewById(R.id.head)).setText(
                 XApplication.userInfo.getString("nickname") +
                         "(" + currentExamInfo.getString("name") + ")");
@@ -227,22 +226,22 @@ public class MainActivity extends BaseActivity implements CompoundButton.OnCheck
             }
         });
 
-        unSelectUser(true);
-
-        updatePosition();
+        markManager.reset();
+        updatePosition(true);
     }
 
     Handler mHandler = new Handler();
-    private void updatePosition() {
+    private void updatePosition(boolean isReload) {
         mHandler.postDelayed(new Runnable() {
             @Override
             public void run() {
-                XApplication.getServerInstance().managerGetLocations( new AuthCallback() {
+                final int exam_id = currentExamInfo.getInteger("id");
+                XApplication.getServerInstance().managerGetLocations(exam_id, new AuthCallback() {
                     @Override
                     public void onFailureEx(Call call, IOException e) {
                         showTextOnUIThread("网络问题");
                         if (currentExamInfo.getInteger("id") == XApplication.examInfo.getInteger("id")) {
-                            updatePosition();
+                            updatePosition(false);
                         }
                     }
 
@@ -251,20 +250,23 @@ public class MainActivity extends BaseActivity implements CompoundButton.OnCheck
                         if (object == null) {
                             showTextOnUIThread("服务器问题");
                         } else if (object.getInteger("state") == 1) {
-                            runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    try {
-                                        showPosition(object.getJSONArray("locations"));
-                                    } catch (Exception e) {}
-                                }
-                            });
+                            if (exam_id == currentExamInfo.getInteger("id")) {
+                                runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        try {
+                                            showPosition(object.getJSONArray("locations"));
+                                        } catch (Exception e) {
+                                        }
+                                    }
+                                });
+                            }
                         } else {
                             showTextOnUIThread(object.getString("message"));
                         }
 
                         if (currentExamInfo.getInteger("id") == XApplication.examInfo.getInteger("id")) {
-                            updatePosition();
+                            updatePosition(false);
                         }
                     }
                 });

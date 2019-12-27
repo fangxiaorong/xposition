@@ -287,34 +287,62 @@ class ManagerGetUserTrack(BaseHandler):
         start = int(self.get_argument('start', 0))
         end = int(self.get_argument('end', 0))
 
-        exam_id = table_manager(Exam).get_active_id()
-        if exam_id:
-            user_record = table_manager(UserRecord, str(exam_id), False)
-            points = user_record.query_records(int(user_id), start=start / 1000.0, end=end / 1000.0)
+        with CursorManager() as cursor:
+            exam_users_info = table_manager(ExamUser).query_detail_records(cursor, id=user_id)
+            if exam_users_info:
+                line_id = exam_users_info[0].get('line_id')
+                if line_id and line_id > 0:
+                    exam_line_info = table_manager(ExamLine).query_postion_record(cursor, id=exam_users_info[0].get('line_id'))
+                    user_record = table_manager(UserRecord, exam_users_info[0].get('exam_id'), False)
+                    points = user_record.query_records(int(user_id), start=start / 1000.0, end=end / 1000.0)
+                    if points is None or len(points) <= 0:
+                        self.write(json.dumps({
+                            'state': 10,
+                            'message': '当前查询路径为空'
+                        }))
+                    else:
+                        points = self._filter_points(points)
+                        self.write(json.dumps({
+                            'state': 1,
+                            'message': '成功',
+                            'points': points,
+                            'line': exam_line_info,
+                        }))
+                else:
+                    self.write(json.dumps{
+                        'state': 10,
+                        'message': '用户未设置考试信息'
+                    })
 
-            if points is None:
-                self.write(json.dumps({
-                    'state': 10,
-                    'message': '非考试用户'
-                }))
-            else:
-                points = self._filter_points(points)
-                with CursorManager() as cursor:
-                    exam_users_info = table_manager(ExamUser).query_detail_records(cursor, id=user_id)
-                    if exam_users_info:
-                        exam_line_info = table_manager(ExamLine).query_postion_record(cursor, id=exam_users_info[0].get('line_id'))
+        # exam_id = table_manager(Exam).get_active_id()
+        # table_manager(ExamUser)
+        # if exam_id:
+        #     user_record = table_manager(UserRecord, str(exam_id), False)
+        #     points = user_record.query_records(int(user_id), start=start / 1000.0, end=end / 1000.0)
 
-                self.write(json.dumps({
-                    'state': 1,
-                    'message': '成功',
-                    'points': points,
-                    'line': exam_line_info,
-                }))
-        else:
-            self.write(json.dumps({
-                'state': 10,
-                'message': '无考试记录'
-            }))
+        #     if points is None:
+        #         self.write(json.dumps({
+        #             'state': 10,
+        #             'message': '非考试用户'
+        #         }))
+        #     else:
+        #         points = self._filter_points(points)
+        #         with CursorManager() as cursor:
+        #             exam_users_info = table_manager(ExamUser).query_detail_records(cursor, id=user_id)
+        #             if exam_users_info:
+        #                 exam_line_info = table_manager(ExamLine).query_postion_record(cursor, id=exam_users_info[0].get('line_id'))
+
+        #         self.write(json.dumps({
+        #             'state': 1,
+        #             'message': '成功',
+        #             'points': points,
+        #             'line': exam_line_info,
+        #         }))
+        # else:
+        #     self.write(json.dumps({
+        #         'state': 10,
+        #         'message': '无考试记录'
+        #     }))
 
 @app.route(r'/api/manager/user/result/(\d+)')
 class ManagerGetUserResult(web.RequestHandler):

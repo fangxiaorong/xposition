@@ -146,4 +146,16 @@ public class MapMarkManager {
             }
         }
     }
+
+    public void reset() {
+        for (Marker marker : userMap.values()) {
+            marker.remove();
+        }
+        for (Bitmap bitmap : usersBitmap.values()) {
+            bitmap.recycle();
+        }
+        userMap.clear();
+        userVisibleMap.clear();
+        usersBitmap.clear();
+    }
 }
