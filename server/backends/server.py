@@ -256,7 +256,7 @@ class ManagerGetUserTrack(BaseHandler):
         size = len(points)
         start_index = 1
         while start_index < size and distance > 0.0000001 and points[0]['manual'] == 2:
-            if points[start_index]['latitude'] < 0.1 or points[state_index]['longitude'] < 0.1:
+            if points[start_index]['latitude'] < 0.1 or points[start_index]['longitude'] < 0.1:
                 continue
             distance = math.pow(prev_lat - points[start_index]['latitude'], 2) + math.pow(prev_lng - points[start_index]['longitude'], 2)
             prev_lat = points[start_index]['latitude']
