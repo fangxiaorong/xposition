@@ -309,10 +309,10 @@ class ManagerGetUserTrack(BaseHandler):
                             'line': exam_line_info,
                         }))
                 else:
-                    self.write(json.dumps{
+                    self.write(json.dumps({
                         'state': 10,
                         'message': '用户未设置考试信息'
-                    })
+                    }))
 
         # exam_id = table_manager(Exam).get_active_id()
         # table_manager(ExamUser)
