@@ -256,6 +256,8 @@ class ManagerGetUserTrack(BaseHandler):
         size = len(points)
         start_index = 1
         while start_index < size and distance > 0.0000001 and points[0]['manual'] == 2:
+            if points[start_index]['latitude'] < 0.1 or points[state_index]['longitude'] < 0.1:
+                continue
             distance = math.pow(prev_lat - points[start_index]['latitude'], 2) + math.pow(prev_lng - points[start_index]['longitude'], 2)
             prev_lat = points[start_index]['latitude']
             prev_lng = points[start_index]['longitude']
@@ -274,6 +276,8 @@ class ManagerGetUserTrack(BaseHandler):
         prev_lat = points[start_index]['latitude']
         prev_lng = points[start_index]['longitude']
         for point in points[start_index + 1:]:
+            if point['latitude'] < 0.1 or point['longitude'] < 0.1:
+                continue
             if prev_lat != point['latitude'] or prev_lng != point['longitude']:
                 distance = math.pow(prev_lat - point['latitude'], 2) + math.pow(prev_lng - point['longitude'], 2)
                 if distance < 0.000000001 or point['manual'] == 1:
