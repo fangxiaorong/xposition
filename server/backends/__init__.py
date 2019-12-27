@@ -357,7 +357,7 @@ class ExamUser(BaseTable):
         return exam_users
 
     def query_detail_records(self, cursor, **kwargs):
-        exem_detail_users = self._query_record(cursor, ('id', 'username', 'departname', 'detail'), **kwargs)
+        exem_detail_users = self._query_record(cursor, ('id', 'username', 'line_id', 'departname', 'detail'), **kwargs)
 
         return exem_detail_users
 
