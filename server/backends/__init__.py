@@ -536,34 +536,39 @@ class UserRecord(BaseTable):
                 else:
                     r_conn.rpush(key, pos_str)
 
+    def direct_query_records(self, user_id, max_id=None, start=None, end=None, **kwargs):
+        result = []
+        with CursorManager() as cursor:
+            if kwargs:
+                val = [(kv[0] + '="' + str(kv[1]) + '"') for kv in kwargs.items()]
+            else:
+                val = ['1=1']
+            val.append('user_id=%d' % user_id)
+            if max_id is not None:
+                val.append('id>%d' % max_id)
+            if start is not None:
+                val.append('create_time>=%d' % int(start))
+            if end is not None:
+                val.append('create_time<=%d' % int(end))
+
+            try:
+                sql_str = '''
+                    SELECT id, latitude, longitude, create_time, manual FROM %s WHERE %s order by create_time asc
+                ''' % (self._table, ' and '.join(val))
+                print(sql_str)
+                cursor.execute(sql_str)
+                result = cursor.fetchall()
+            except Exception as e:
+                print(e)
+
+        return result
+
     def query_records(self, user_id, max_id=None, start=None, end=None, **kwargs):
         result = None
         if r_conn.hexists(self.active_user_info_key, user_id):
             info = json.loads(r_conn.hget(self.active_user_info_key, user_id))
             if info.get('line_id'):
-                result = []
-                with CursorManager() as cursor:
-                    if kwargs:
-                        val = [(kv[0] + '="' + str(kv[1]) + '"') for kv in kwargs.items()]
-                    else:
-                        val = ['1=1']
-                    val.append('user_id=%d' % user_id)
-                    if max_id is not None:
-                        val.append('id>%d' % max_id)
-                    if start is not None:
-                        val.append('create_time>=%d' % int(start))
-                    if end is not None:
-                        val.append('create_time<=%d' % int(end))
-
-                    try:
-                        sql_str = '''
-                            SELECT id, latitude, longitude, create_time, manual FROM %s WHERE %s order by create_time asc
-                        ''' % (self._table, ' and '.join(val))
-                        print(sql_str)
-                        cursor.execute(sql_str)
-                        result = cursor.fetchall()
-                    except Exception as e:
-                        print(e)
+                result = self.direct_query_records(user_id, line_id, max_id=max_id, start=start, end=end, **kwargs)
         return result
 
 class ExamCalculate(object):
