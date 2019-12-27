@@ -293,7 +293,7 @@ class ManagerGetUserTrack(BaseHandler):
                 line_id = exam_users_info[0].get('line_id')
                 if line_id and line_id > 0:
                     exam_line_info = table_manager(ExamLine).query_postion_record(cursor, id=exam_users_info[0].get('line_id'))
-                    user_record = table_manager(UserRecord, str(exam_users_info[0].get('exam_id')), False)
+                    user_record = table_manager(UserRecord, str(exam_users_info[0].get('exam_id')))
                     points = user_record.query_records(int(user_id), start=start / 1000.0, end=end / 1000.0)
                     if points is None or len(points) <= 0:
                         self.write(json.dumps({
