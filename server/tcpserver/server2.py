@@ -124,11 +124,14 @@ class NormalHandler(MessageHandler):
         # print('receive normal:', gps_time, longitude, latitude, altitude, speed, course, satellites)
         logger(device, self, gps_time, longitude, latitude, altitude, speed, course, satellites)
 
-        device.longitude = longitude
-        device.latitude = latitude
-        device.speed = speed
+        if longitude is not None and latitude is not None:
+            device.longitude = longitude
+            device.latitude = latitude
+            device.speed = speed
 
-        return LinkMessage(NormalHandler.MSG_TYPE, serial), device.EVENT_POSITION
+            return LinkMessage(NormalHandler.MSG_TYPE, serial), device.EVENT_POSITION
+
+        return LinkMessage(NormalHandler.MSG_TYPE, serial), None
 
 
 class WarringHandler(MessageHandler):
