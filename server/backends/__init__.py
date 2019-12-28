@@ -864,7 +864,7 @@ class ExamCalculate(object):
 
                 line_info = self._conver_line_info(line_info)
                 records = table_manager(UserRecord, str(active_id)).query_records(user_info.get('id'), manual=1)
-                if records is None:
+                if records is None and len(records) <= 2:
                     continue
 
                 # >>>>>>>>
