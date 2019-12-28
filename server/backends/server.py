@@ -422,7 +422,7 @@ class ManagerUserResults(web.RequestHandler):
         results.update({'state': 1, 'message': '成功'})
         self.write(json.dumps(results))
 
-    def post(self):
+    def post(self, _):
         level1 = self.get_argument('level1', 0)
         level2 = self.get_argument('level2', 0)
         level3 = self.get_argument('level3', 0)
