@@ -13,8 +13,8 @@ from tcpserver.device import DeviceInfo
 from backends import add_device_record
 from backends import ExamCalculate
 
-def logger(device, handler, **args):
-    print(datetime.now().isoformat(), '[' + device.imei + ']', handler.__class__.__name__, **args)
+def logger(device, handler, *args):
+    print(datetime.now().isoformat(), '[' + device.imei + ']', handler.__class__.__name__, *args)
 
 class MessageHandler(object):
     def __init__(self):
