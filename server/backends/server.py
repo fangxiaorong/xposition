@@ -353,25 +353,26 @@ class ManagerGetUserTrack(BaseHandler):
 @app.route(r'/api/manager/line/(\d+)')
 class ManagerGetUserLine(BaseHandler):
     def get(self, user_id):
-        exam_users_info = table_manager(ExamUser).query_detail_records(cursor, id=user_id)
-        if exam_users_info:
-            line_id = exam_users_info[0].get('line_id')
-            if line_id and line_id > 0:
-                exam_line_info = table_manager(ExamLine).query_postion_record(cursor, id=line_id)
-                self.write(json.dumps({
-                    'state': 1,
-                    'message': '成功',
-                    'points': exam_line_info
-                }))
+        with CursorManager() as cursor:
+            exam_users_info = table_manager(ExamUser).query_detail_records(cursor, id=user_id)
+            if exam_users_info:
+                line_id = exam_users_info[0].get('line_id')
+                if line_id and line_id > 0:
+                    exam_line_info = table_manager(ExamLine).query_postion_record(cursor, id=line_id)
+                    self.write(json.dumps({
+                        'state': 1,
+                        'message': '成功',
+                        'points': exam_line_info
+                    }))
+                else:
+                    self.write(json.dumps({
+                        'state': 10,
+                        'message': '路线未设置'
+                    }))
             else:
                 self.write(json.dumps({
                     'state': 10,
-                    'message': '路线未设置'
-                }))
-        else:
-            self.write(json.dumps({
-                'state': 10,
-                'message': '用户未找到'
+                    'message': '用户未找到'
             }))
 
 @app.route(r'/api/manager/user/result/(\d+)')
