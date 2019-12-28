@@ -362,7 +362,7 @@ class ManagerGetUserLine(BaseHandler):
                     self.write(json.dumps({
                         'state': 1,
                         'message': '成功',
-                        'points': exam_line_info
+                        'line': exam_line_info
                     }))
                 else:
                     self.write(json.dumps({
