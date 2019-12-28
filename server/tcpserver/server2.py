@@ -13,6 +13,8 @@ from tcpserver.device import DeviceInfo
 from backends import add_device_record
 from backends import ExamCalculate
 
+def logger(device, handler, **args):
+    print(datetime.now().isoformat(), '[' + device.imei + ']', handler.__class__.__name__, **args)
 
 class MessageHandler(object):
     def __init__(self):
@@ -78,7 +80,8 @@ class LoginHandler(MessageHandler):
 
         device.imei = _imei
 
-        print('receive login:', _imei, language)
+        # print('receive login:', _imei, language)
+        logger(device, self, language)
 
         data = struct.pack('!L', int(datetime.utcnow().timestamp()))
         return LinkMessage(LoginHandler.MSG_TYPE, serial, data), device.EVENT_INIT
@@ -96,7 +99,8 @@ class GPSInfoHandler(MessageHandler):
 
         latitude, longitude = ExamCalculate.gps_to_amap(latitude, longitude)
 
-        print('receive gps:', time, longitude, latitude, speed, direction)
+        # print('receive gps:', time, longitude, latitude, speed, direction)
+        logger(device, self, time, longitude, latitude, speed, direction)
 
         return None, None
 
@@ -105,7 +109,8 @@ class HeartHandler(MessageHandler):
     MSG_TYPE = 0x03
 
     def handler(self, device, message, serial):
-        print('receive heart:', message)
+        # print('receive heart:', message)
+        logger(device, self, message)
 
         return LinkMessage(HeartHandler.MSG_TYPE, serial), None
 
@@ -116,7 +121,8 @@ class NormalHandler(MessageHandler):
     def handler(self, device, message, serial):
         index, gps_time, latitude, longitude, altitude, speed, course, satellites = self.position_decode(message)
 
-        print('receive normal:', gps_time, longitude, latitude, altitude, speed, course, satellites)
+        # print('receive normal:', gps_time, longitude, latitude, altitude, speed, course, satellites)
+        logger(device, self, gps_time, longitude, latitude, altitude, speed, course, satellites)
 
         device.longitude = longitude
         device.latitude = latitude
@@ -133,7 +139,8 @@ class WarringHandler(MessageHandler):
 
         w_type, status = struct.unpack('!BH', message[index:])
 
-        print('recevie warring:', gps_time, longitude, latitude, altitude, speed, course, satellites, w_type, status)
+        # print('recevie warring:', gps_time, longitude, latitude, altitude, speed, course, satellites, w_type, status)
+        logger(device, self, gps_time, longitude, latitude, altitude, speed, course, satellites, w_type, status)
 
         if longitude is not None and latitude is not None:
             device.longitude = longitude
@@ -197,7 +204,7 @@ class Reader(object):
 
     def _read_loop(self, data):
         size = self.message.add_data(data)
-        print(data, size)
+        # print(data, size)
         if self.message.get_state() == Message.MSG_FULL:
             self.callback(self.message)
             self.message.clean()
@@ -268,7 +275,8 @@ class RobotConnection(Connection):
         if len(self._send_array) > 0:
             msg = self._send_array.pop(0)
             self._send_message(msg)
-            print('send:::', msg.get_bytes())
+            # print('send:::', msg.get_bytes())
+            logger(self._device, self, 'SEND', msg.get_bytes())
 
         IOLoop.current().call_later(5, self._write_loop)
 
@@ -282,7 +290,7 @@ class RobotConnection(Connection):
 
     def _send_message(self, message):
         if self._stream:
-            print('send message:', message.get_data())
+            # print('send message:', message.get_data())
             self._stream.write(message.get_data())
 
     def _message_handler(self, message):
@@ -295,7 +303,8 @@ class RobotConnection(Connection):
             if event:
                 self._event_resolver(event)
         else:
-            print(msg_type, 'message handler is not set.')
+            # print(msg_type, 'message handler is not set.')
+            logger(device, self, 'UNKNOW MESSAGE', msg_type, content)
 
 
 class GPSServer(TCPServer):
