@@ -304,7 +304,7 @@ class RobotConnection(Connection):
                 self._event_resolver(event)
         else:
             # print(msg_type, 'message handler is not set.')
-            logger(device, self, 'UNKNOW MESSAGE', msg_type, content)
+            logger(self._device, self, 'UNKNOW MESSAGE', msg_type, content)
 
 
 class GPSServer(TCPServer):
