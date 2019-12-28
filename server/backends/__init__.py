@@ -568,7 +568,7 @@ class UserRecord(BaseTable):
         if r_conn.hexists(self.active_user_info_key, user_id):
             info = json.loads(r_conn.hget(self.active_user_info_key, user_id))
             if info.get('line_id'):
-                result = self.direct_query_records(user_id, info.get('line_id'), max_id=max_id, start=start, end=end, **kwargs)
+                result = self.direct_query_records(user_id, max_id=max_id, start=start, end=end, **kwargs)
         return result
 
 class ExamCalculate(object):
