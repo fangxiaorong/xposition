@@ -76,6 +76,42 @@
             <!--  + '(' + (selected.starttime === undefined ? '时间未设置' : (selected.starttime + '-' + selected.endtime)) + ')' -->
             <v-toolbar-title>{{ selected.name + ' -- [ 优秀(' + selected.score1 + ') 良好(' + selected.score2 + ') 及格(' + selected.score3 + ') 得分(' + selected.score4 + ') ]'}}</v-toolbar-title>
             <v-divider class="mx-2" inset vertical></v-divider>
+            <v-spacer></v-spacer>
+            <v-dialog v-model="examResultDialog" max-width="800px" v-if="selected && selected.state===2 && active_exam_id != selected.id">
+              <v-btn slot="activator" @click="loadExamResult">成绩查看</v-btn>
+              <v-card>
+                <v-card-title>
+                  <span class="headline">考试成绩</span>
+                  <v-btn v-if="examResults" @click="exportExamResult">导出</v-btn>
+                </v-card-title>
+                <v-card-text v-if="examResults">
+                  <div>
+                    <div style="display: inline-block; width: 24%">优秀：<span v-text="examResults.level1"></span></div>
+                    <div style="display: inline-block; width: 24%">良好：<span v-text="examResults.level2"></span></div>
+                    <div style="display: inline-block; width: 24%">合格：<span v-text="examResults.level3"></span></div>
+                    <div style="display: inline-block; width: 24%">不合格：<span v-text="examResults.level4"></span></div>
+                  </div>
+                  <div v-for="(user, index) in examResults.users" :key="index" style="border-bottom: #ddd 1px solid; padding: 10px 0;">
+                    <div>
+                      <span style="display: inline-block; width: 200px;" v-text="user.username"></span>
+                      <span style="display: inline-block; width: 10px;"></span>排名
+                      <span v-text="index"></span>
+                    </div>
+                    <div>
+                      <span style="display: inline-block; width: 30%;" v-text="'线路：' + user.linename"></span>
+                      <span style="display: inline-block; width: 30%;" v-text="'单位：' + user.departname"></span>
+                      <span style="display: inline-block; width: 18%;" v-text="'总得分：' + user.total_score"></span>
+                    </div>
+                    <div v-for="point in user.points" :key="point.id">
+                      <div style="display: inline-block; width: 5%;" v-text="point.id"></div>
+                      <div style="display: inline-block; width: 73%;" v-text="point.longitude + ',' + point.latitude"></div>
+                      <div style="display: inline-block; width: 10%;" v-text="'权重：' + point.weight"></div>
+                      <div style="display: inline-block; width: 10%;" v-text="'得分：' + point.score"></div>
+                    </div>
+                  </div>
+                </v-card-text>
+              </v-card>
+            </v-dialog>
             <!-- <v-spacer></v-spacer>
             <input type="file" name="importuser" @change="handleFileChange" v-show="selected.state === 1">
             <a href="/static/helpimport.html" target="_blank">导入文件说明</a> -->
@@ -129,6 +165,7 @@
 
 <script>
 import jschardet from 'jschardet';
+import XLSX from 'xlsx';
 
 export default {
   data: () => ({
@@ -139,6 +176,7 @@ export default {
     lineMap: {},
     examDialog: false,
     userDialog: false,
+    examResultDialog: false,
     headers: [
       { text: '考试号', value: 'name', sortable: false, align: 'left' },
       { text: '路线号', value: 'calories', sortable: false },
@@ -169,7 +207,8 @@ export default {
       starttime: '',
       endtime: ''
     },
-    editedUserItem: {}
+    editedUserItem: {},
+    examResults: undefined
   }),
   computed: {
     formTitle () {
@@ -319,12 +358,12 @@ export default {
       this.getExamUser();
     },
     getExamUser () {
-      this.axios.get('/api/admin/examuser/list/' + this.selected.id).then((response) => {
-        console.log(response);
-        if (response.data.state === 1) {
-          this.desserts = response.data.users;
-        }
-      });
+      // this.axios.get('/api/admin/examuser/list/' + this.selected.id).then((response) => {
+      //   console.log(response);
+      //   if (response.data.state === 1) {
+      //     this.desserts = response.data.users;
+      //   }
+      // });
     },
     saveExamUser () {
       this.axios.post('/api/admin/examuser/list/' + this.selected.id, 'exam_users=' + encodeURI(JSON.stringify(this.desserts))).then((response) => {
@@ -356,6 +395,46 @@ export default {
           window.alert(response.data.message);
         }
       });
+    },
+    loadExamResult () {
+      this.examResults = undefined;
+      this.axios.get('/api/manager/user/results/' + this.selected.id).then((response) => {
+        if (response.data.state === 1) {
+          this.examResults = response.data.data;
+        } else {
+          window.alert(response.data.message);
+        }
+      });
+    },
+    exportExamResult () {
+      let data = [];
+      let maxCount = 5;
+
+      /* eslint-disable */
+      for (var i = 0; i < this.examResults.users.length; i++) {
+        const user = this.examResults.users[i]
+        let row = [i + 1, user.username, user.departname, user.linename, user.total_score]
+        for (var j = 0; j < user.points.length; j++) {
+          const point = user.points[j]
+          row.push(point.score)
+        }
+        data.push(row)
+        if (maxCount < (user.points.length + 5)) {
+          maxCount = user.points.length + 5
+        }
+      }
+
+      let header = ['排名', '用户名', '单位名称', '考试路线', '总得分']
+      for (var i = 5; i < maxCount; i++) {
+        header.push('第' + (i - 4) + '个考试点')
+      }
+      data.unshift(header)
+
+      const wb = XLSX.utils.book_new()
+      const ws = XLSX.utils.aoa_to_sheet(data)
+      XLSX.utils.book_append_sheet(wb, ws, 'Sheet1')
+      XLSX.writeFile(wb, '考试结果.xlsx');
+      /* eslint-enable */
     }
   }
 };
