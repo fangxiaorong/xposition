@@ -11,7 +11,8 @@ public class ServerRequest {
 
     String userId;
 //    String baseUrl = "http://10.253.102.55";
-    String baseUrl = "http://212.64.26.210";
+//    String baseUrl = "http://212.64.26.210";
+    String baseUrl = "http://39.97.237.240";
 
     public ServerRequest(Context context) {
         userId = MacUtils.getMobileMAC(context);

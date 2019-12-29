@@ -5,7 +5,7 @@
               android:layout_height="match_parent">
     <TextView
             android:id="@+id/head"
-            android:text="总得分：88"
+            android:text="总得分："
             android:textSize="28sp"
             android:padding="10dp"
             android:textAlignment="center"

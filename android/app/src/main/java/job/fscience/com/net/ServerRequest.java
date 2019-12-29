@@ -18,8 +18,8 @@ public class ServerRequest {
     String userId;
 //    String baseUrl = "http://10.253.102.125:8002";
 //    String baseUrl = "http://192.168.0.102:8002";
-    String baseUrl = "http://212.64.26.210";
-//    String baseUrl = "http://39.97.237.240";
+//    String baseUrl = "http://212.64.26.210";
+    String baseUrl = "http://39.97.237.240";
 
     public ServerRequest(Context context) {
         client = new OkHttpClient.Builder()
@@ -87,6 +87,11 @@ public class ServerRequest {
         client.newCall(request).enqueue(callback);
     }
 
+    public void managerGetUserLine(int userId, Callback callback) {
+        Request request = new Request.Builder().url(baseUrl + "/api/manager/line/" + userId).build();
+        client.newCall(request).enqueue(callback);
+    }
+
     public void managerGetResult(int userId, Callback callback) {
         Request request = new Request.Builder().url(baseUrl + "/api/manager/user/result/" + userId).build();
         client.newCall(request).enqueue(callback);
@@ -104,7 +109,7 @@ public class ServerRequest {
                 .add("level3", "" + level3)
                 .add("level4", "" + level4)
                 .build();
-        Request request = new Request.Builder().url(baseUrl + "/api/manager/user/results").post(body).build();
+        Request request = new Request.Builder().url(baseUrl + "/api/manager/user/results/1").post(body).build();
         client.newCall(request).enqueue(callback);
     }
 

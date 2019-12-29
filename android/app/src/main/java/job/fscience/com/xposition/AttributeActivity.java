@@ -38,11 +38,11 @@ public class AttributeActivity extends BaseActivity {
 
             @Override
             public void onResponse(Call call, final Response response) throws IOException {
+                final JSONObject userInfo = JSON.parseObject(response.body().string());
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
                         try {
-                            JSONObject userInfo = JSON.parseObject(response.body().string());
                             if (userInfo.getInteger("state") == 1) {
                                 JSONObject detail = userInfo.getJSONObject("detail");
                                 adapter.updateData(detail.getJSONArray("points"));
@@ -50,7 +50,10 @@ public class AttributeActivity extends BaseActivity {
                             } else {
                                 Toast.makeText(AttributeActivity.this, userInfo.getString("message"), Toast.LENGTH_LONG).show();
                             }
-                        } catch (Exception e) {}
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            Toast.makeText(AttributeActivity.this, "数据异常", Toast.LENGTH_LONG).show();
+                        }
                     }
                 });
 
@@ -105,8 +108,8 @@ public class AttributeActivity extends BaseActivity {
             }
 
             JSONObject value = data.getJSONObject(i);
-            viewHolder.latitudeTextView.setText("" + value.getDouble("latitude"));
-            viewHolder.longitudeTextView.setText("" + value.getDouble("longitude"));
+            viewHolder.latitudeTextView.setText(String.format("%.4f", value.getDouble("latitude")));
+            viewHolder.longitudeTextView.setText(String.format("%.4f", value.getDouble("longitude")));
             viewHolder.numberTextView.setText("" + value.getInteger("id"));
             viewHolder.weightTextView.setText("" + value.getDouble("weight"));
             viewHolder.scoreTextView.setText("" + value.getDouble("score"));

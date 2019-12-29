@@ -3,8 +3,10 @@ package job.fscience.com.xposition;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Bundle;
+import android.support.annotation.RequiresApi;
 import android.util.Log;
 import android.util.Pair;
 import android.view.LayoutInflater;
@@ -21,10 +23,7 @@ import com.amap.api.maps.MapView;
 import com.amap.api.maps.model.*;
 import com.amap.api.maps.utils.SpatialRelationUtil;
 import com.amap.api.maps.utils.overlay.SmoothMoveMarker;
-import job.fscience.com.lib.AuthCallback;
-import job.fscience.com.lib.BaseActivity;
-import job.fscience.com.lib.MapMarkManager;
-import job.fscience.com.lib.SlidingUpPanelLayout;
+import job.fscience.com.lib.*;
 import okhttp3.Call;
 
 import java.io.IOException;
@@ -39,7 +38,8 @@ public class MainActivity extends BaseActivity implements CompoundButton.OnCheck
     private UserListAdapter adapter;
 
     private Polyline polyline = null;
-    private ArrayList<Marker> examMarks = null;
+//    private ArrayList<Marker> examMarks = null;
+    private MapExamPointManager examMarkManager = null;
     private MapMarkManager markManager = null;
 
     private JSONObject currentExamInfo = null;
@@ -57,6 +57,7 @@ public class MainActivity extends BaseActivity implements CompoundButton.OnCheck
         //地图模式可选类型：MAP_TYPE_NORMAL,MAP_TYPE_SATELLITE,MAP_TYPE_NIGHT
         mMap.setMapType(AMap.MAP_TYPE_NORMAL);
         markManager = new MapMarkManager(this, mMap);
+        examMarkManager = new MapExamPointManager(this, mMap);
 
         mLayout = (SlidingUpPanelLayout) findViewById(R.id.sliding_layout);
         mLayout.setPanelSlideListener(new SlidingUpPanelLayout.PanelSlideListener() {
@@ -144,11 +145,6 @@ public class MainActivity extends BaseActivity implements CompoundButton.OnCheck
                 if (polyline != null) {
                     polyline.remove();
                 }
-                if (examMarks != null) {
-                    while (examMarks.size() > 0) {
-                        examMarks.remove(0).remove();
-                    }
-                }
 
                 final int userId = (int) view.getTag();
                 final AnimationSettingDialog dialog = new AnimationSettingDialog(MainActivity.this);
@@ -156,9 +152,26 @@ public class MainActivity extends BaseActivity implements CompoundButton.OnCheck
                 dialog.setCallback(new AnimationSettingDialog.AnimationSettingClick() {
                     @Override
                     public void onConfirmClick() {
+                        findViewById(R.id.play).setEnabled(true);
+                        findViewById(R.id.play).setAlpha(1.0f);
                         showRoute(userId, dialog.getMinValue(), dialog.getMaxValue());
                     }
                 });
+            }
+        });
+        findViewById(R.id.line).setOnClickListener(new View.OnClickListener() {
+            @RequiresApi(api = Build.VERSION_CODES.HONEYCOMB)
+            @Override
+            public void onClick(View view) {
+                if (view.getTop() == 0) {
+                    ((ImageView)findViewById(R.id.line)).setImageResource(R.mipmap.markon);
+                    showLine((int) view.getTag());
+                    view.setTop(1);
+                } else {
+                    ((ImageView)findViewById(R.id.line)).setImageResource(R.mipmap.markoff);
+                    examMarkManager.hidden();
+                    view.setTop(0);
+                }
             }
         });
         findViewById(R.id.attribute).setOnClickListener(new View.OnClickListener() {
@@ -383,12 +396,16 @@ public class MainActivity extends BaseActivity implements CompoundButton.OnCheck
         unSelectUser(false);
 
         if (markManager.userValidate(userId)) {
+            ((ImageView)findViewById(R.id.attribute)).setImageResource(R.mipmap.detail);
             findViewById(R.id.route).setVisibility(View.VISIBLE);
 //            findViewById(R.id.attribute).setVisibility(View.VISIBLE);
             findViewById(R.id.delete).setVisibility(View.VISIBLE);
             findViewById(R.id.play).setVisibility(View.VISIBLE);
+            findViewById(R.id.line).setVisibility(View.VISIBLE);
             findViewById(R.id.route).setTag(userId);
             findViewById(R.id.delete).setTag(userId);
+            findViewById(R.id.line).setTag(userId);
+            findViewById(R.id.play).setAlpha(0.5f);
 
             startAnimation(userId);
             selectedUserId = userId;
@@ -401,17 +418,17 @@ public class MainActivity extends BaseActivity implements CompoundButton.OnCheck
             polyline.remove();
             polyline = null;
         }
-        if (examMarks != null) {
-            while (examMarks.size() > 0) {
-                examMarks.remove(0).remove();
-            }
-        }
+        examMarkManager.hidden();
+        ((ImageView)findViewById(R.id.line)).setImageResource(R.mipmap.markoff);
+        ((ImageView)findViewById(R.id.attribute)).setImageResource(R.mipmap.attribute);
+        findViewById(R.id.play).setEnabled(false);
         stopPlay();
 
         findViewById(R.id.route).setVisibility(View.GONE);
 //        findViewById(R.id.attribute).setVisibility(View.GONE);
         findViewById(R.id.delete).setVisibility(View.GONE);
         findViewById(R.id.play).setVisibility(View.GONE);
+        findViewById(R.id.line).setVisibility(View.GONE);
 
         if (clear) {
             ((ListView) findViewById(R.id.user_list)).clearChoices();
@@ -423,6 +440,9 @@ public class MainActivity extends BaseActivity implements CompoundButton.OnCheck
     SmoothMoveMarker smoothMarker = null;
     private void startPlay() {
         stopPlay();
+        findViewById(R.id.play).setEnabled(false);
+        findViewById(R.id.play).setAlpha(0.5f);
+
 
         if (polyline != null) {
             markManager.hiddenAll();
@@ -457,7 +477,12 @@ public class MainActivity extends BaseActivity implements CompoundButton.OnCheck
                     System.out.println(v);
                     mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(smoothMarker.getPosition(), 18));
                     if (v <= 0) {
-                        stopPlay();
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                stopPlay();
+                            }
+                        });
                     }
                 }
             });
@@ -471,8 +496,35 @@ public class MainActivity extends BaseActivity implements CompoundButton.OnCheck
             smoothMarker = null;
         }
         markManager.showAll();
+        findViewById(R.id.play).setEnabled(true);
+        findViewById(R.id.play).setAlpha(1.0f);
     }
 
+    private void showLine(int userId) {
+        XApplication.getServerInstance().managerGetUserLine(userId, new AuthCallback() {
+            @Override
+            public void onFailureEx(Call call, IOException e) {
+                showTextOnUIThread("网络问题");
+            }
+
+            @Override
+            public void onResponseEx(final JSONObject data) throws IOException {
+                if (data == null) {
+                    showTextOnUIThread("服务器问题");
+                } else if (data.getInteger("state") == 1) {
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            JSONArray marks = data.getJSONObject("line").getJSONArray("points");
+                            examMarkManager.showMarks(marks);
+                        }
+                    });
+                } else {
+                    showTextOnUIThread(data.getString("message"));
+                }
+            }
+        });
+    }
 
     private void showRoute(int userId, long startTime, long endTime) {
         XApplication.getServerInstance().managerGetUserTrack(userId, startTime, endTime, new AuthCallback() {
@@ -501,16 +553,6 @@ public class MainActivity extends BaseActivity implements CompoundButton.OnCheck
                                     }
                                     polyline = mMap.addPolyline(new PolylineOptions().
                                             addAll(latLngs).width(10).color(Color.argb(255, 1, 1, 1)));
-
-                                    JSONArray marks = object.getJSONObject("line").getJSONArray("points");
-                                    ArrayList<MarkerOptions> ps = new ArrayList<>();
-                                    for (int idx = 0; idx < marks.size(); idx++) {
-                                        JSONObject mark = marks.getJSONObject(idx);
-                                        MarkerOptions p = new MarkerOptions();
-                                        p.position(new LatLng(mark.getDouble("latitude"), mark.getDouble("longitude")));
-                                        ps.add(p);
-                                    }
-                                    examMarks = mMap.addMarkers(ps, true);
                                 }
 
                             } catch (Exception e) {

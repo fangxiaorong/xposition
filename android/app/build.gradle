@@ -15,9 +15,19 @@ android {
         }
         multiDexEnabled true
     }
+    signingConfigs {
+        release {
+            storeFile file('/Users/fangxiaorong/android.jks')
+            storePassword "123456"
+            keyAlias "xiaorong"
+            keyPassword "123456"
+        }
+    }
     buildTypes {
         release {
             minifyEnabled false
+            zipAlignEnabled true
+            signingConfig signingConfigs.release
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
