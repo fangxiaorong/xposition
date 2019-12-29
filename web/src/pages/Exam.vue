@@ -358,12 +358,12 @@ export default {
       this.getExamUser();
     },
     getExamUser () {
-      // this.axios.get('/api/admin/examuser/list/' + this.selected.id).then((response) => {
-      //   console.log(response);
-      //   if (response.data.state === 1) {
-      //     this.desserts = response.data.users;
-      //   }
-      // });
+      this.axios.get('/api/admin/examuser/list/' + this.selected.id).then((response) => {
+        console.log(response);
+        if (response.data.state === 1) {
+          this.desserts = response.data.users;
+        }
+      });
     },
     saveExamUser () {
       this.axios.post('/api/admin/examuser/list/' + this.selected.id, 'exam_users=' + encodeURI(JSON.stringify(this.desserts))).then((response) => {
