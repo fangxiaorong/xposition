@@ -205,6 +205,9 @@ class UserWarring(web.RequestHandler):
         if exam_id:
             user_record = table_manager(UserRecord, str(exam_id), False)
             if user_record:
+                user_id = int(self.get_argument('user_id'))
+                latitude = float(self.get_argument('latitude'))
+                longitude = float(self.get_argument('longitude'))
                 result = user_record.add_warring(user_id, latitude, longitude)
             else:
                 result = '无考试记录'
