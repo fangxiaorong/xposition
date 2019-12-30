@@ -423,7 +423,7 @@ class ExamUser(BaseTable):
             for info in zip(user_array, warrings):
                 pos_info = info[0]
                 if info[1] is not None:
-                    pos_info.update({'state': 4, 'warring_time': info[1]})
+                    pos_info.update({'state': 4, 'warring_time': str(info[1])})
                 else:
                     tmp_time = float(pos_info.get('create_time')) if pos_info.get('create_time') else 0
                     if current_time - tmp_time < 300:
