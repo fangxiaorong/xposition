@@ -1,12 +1,17 @@
 package job.fscience.com.xposition;
 
+import android.Manifest;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Bundle;
 import android.support.annotation.RequiresApi;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.util.Pair;
 import android.view.LayoutInflater;
@@ -24,11 +29,15 @@ import com.amap.api.maps.model.*;
 import com.amap.api.maps.utils.SpatialRelationUtil;
 import com.amap.api.maps.utils.overlay.SmoothMoveMarker;
 import job.fscience.com.lib.*;
+import job.fscience.com.tts.Speaker;
 import okhttp3.Call;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class MainActivity extends BaseActivity implements CompoundButton.OnCheckedChangeListener {
     private static final String TAG = "DemoActivity";
@@ -43,7 +52,10 @@ public class MainActivity extends BaseActivity implements CompoundButton.OnCheck
     private MapMarkManager markManager = null;
 
     private JSONObject currentExamInfo = null;
+    private Speaker speaker;
 
+    SharedPreferences.Editor editor;
+    SharedPreferences read;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -116,11 +128,13 @@ public class MainActivity extends BaseActivity implements CompoundButton.OnCheck
 //        });
 
         // 格式设置
-        TextView headTextView = (TextView)findViewById(R.id.head);
-        Drawable headDrawable = getResources().getDrawable(R.mipmap.ic_launcher);
-        headDrawable.setBounds(0, 0, 60, 60);
-        headTextView.setCompoundDrawables(headDrawable, null, null, null);
+//        TextView headTextView = (TextView)findViewById(R.id.head);
+//        Drawable headDrawable = getResources().getDrawable(R.mipmap.ic_launcher);
+//        headDrawable.setBounds(0, 0, 60, 60);
+//        headTextView.setCompoundDrawables(headDrawable, null, null, null);
 
+        read = getSharedPreferences("lock", MODE_PRIVATE);
+        editor = read.edit();
 
         adapter = new UserListAdapter();
         final ListView listView = (ListView) findViewById(R.id.user_list);
@@ -202,7 +216,26 @@ public class MainActivity extends BaseActivity implements CompoundButton.OnCheck
             }
         });
 
+        findViewById(R.id.setting).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(MainActivity.this, SettingsActivity.class);
+                startActivity(intent);
+            }
+        });
+
         loadExam(XApplication.examInfo);
+    }
+
+    boolean isInited = false;
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (!isInited) {
+            isInited = true;
+            initPermission();
+            speaker = new Speaker(this);
+        }
     }
 
     private void loadExam (JSONObject exam) {
@@ -214,6 +247,13 @@ public class MainActivity extends BaseActivity implements CompoundButton.OnCheck
                 XApplication.userInfo.getString("nickname") +
                         "(" + currentExamInfo.getString("name") + ")");
 
+        loadExamUsers();
+
+        markManager.reset();
+        updatePosition();
+    }
+
+    private void loadExamUsers() {
         XApplication.getServerInstance().managerGetExamUsers(currentExamInfo.getInteger("id"), new AuthCallback() {
             @Override
             public void onFailureEx(Call call, IOException e) {
@@ -238,13 +278,10 @@ public class MainActivity extends BaseActivity implements CompoundButton.OnCheck
                 }
             }
         });
-
-        markManager.reset();
-        updatePosition(true);
     }
 
     Handler mHandler = new Handler();
-    private void updatePosition(boolean isReload) {
+    private void updatePosition() {
         mHandler.postDelayed(new Runnable() {
             @Override
             public void run() {
@@ -254,7 +291,7 @@ public class MainActivity extends BaseActivity implements CompoundButton.OnCheck
                     public void onFailureEx(Call call, IOException e) {
                         showTextOnUIThread("网络问题");
                         if (currentExamInfo.getInteger("id") == XApplication.examInfo.getInteger("id")) {
-                            updatePosition(false);
+                            updatePosition();
                         }
                     }
 
@@ -263,23 +300,24 @@ public class MainActivity extends BaseActivity implements CompoundButton.OnCheck
                         if (object == null) {
                             showTextOnUIThread("服务器问题");
                         } else if (object.getInteger("state") == 1) {
-                            if (exam_id == currentExamInfo.getInteger("id")) {
-                                runOnUiThread(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        try {
-                                            showPosition(object.getJSONArray("locations"));
-                                        } catch (Exception e) {
-                                        }
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    try {
+                                        showPosition(object.getJSONArray("locations"));
+                                        adapter.checkUsers(object.getJSONArray("locations"));
+                                    } catch (Exception e) {
+                                        e.printStackTrace();
                                     }
-                                });
-                            }
+                                }
+                            });
+
                         } else {
                             showTextOnUIThread(object.getString("message"));
                         }
 
                         if (currentExamInfo.getInteger("id") == XApplication.examInfo.getInteger("id")) {
-                            updatePosition(false);
+                            updatePosition();
                         }
                     }
                 });
@@ -304,10 +342,32 @@ public class MainActivity extends BaseActivity implements CompoundButton.OnCheck
 
     class UserListAdapter extends BaseAdapter {
         JSONArray data = null;
+        HashMap<Integer, String> users = new HashMap<>();
         public void updateData(JSONArray data) {
             this.data = data;
+            users.clear();
+            for (Object o : data) {
+                JSONObject item = (JSONObject) o;
+                users.put(item.getInteger("id"), "");
+            }
             this.notifyDataSetChanged();
         }
+
+        private boolean allUserExists(JSONArray users) {
+            for (Object o : users) {
+                JSONObject user = (JSONObject) o;
+                if (!this.users.containsKey(user.getInteger("user_id"))) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        public void checkUsers(JSONArray users) {
+            if (!allUserExists(users)) {
+                loadExamUsers();
+            }
+        }
+
         @Override
         public int getCount() {
             if (data == null)
@@ -354,8 +414,8 @@ public class MainActivity extends BaseActivity implements CompoundButton.OnCheck
             viewHolder.departNameTextView.setText(object.getString("departname"));
 
             Boolean visible = markManager.userVisibleMap.get(object.getInteger("id"));
-            viewHolder.userStateButtom.setChecked(visible == null || visible);
             viewHolder.userStateButtom.setTag(object.getInteger("id"));
+            viewHolder.userStateButtom.setChecked(visible == null || visible);
 
             return view;
         }
@@ -366,6 +426,23 @@ public class MainActivity extends BaseActivity implements CompoundButton.OnCheck
         public TextView userNameTextView;
         public TextView departNameTextView;
         public ToggleButton userStateButtom;
+    }
+
+    private Map<Integer, String> warrings = new HashMap<>();
+    private void warringUser(int userId, String name, String time) {
+        if (time == null) return;
+
+        String prevTime = warrings.get(userId);
+        if ((prevTime == null || !prevTime.equals(time)) && speaker != null) {
+            warrings.put(userId, time);
+
+            String val = read.getString(userId + "", "");
+            if (!val.equals(time)) {
+                editor.putString(userId + "", time);
+                editor.commit();
+                speaker.speak(name + "发起了报警求助。");
+            }
+        }
     }
 
     private void showPosition(JSONArray points) {
@@ -379,6 +456,11 @@ public class MainActivity extends BaseActivity implements CompoundButton.OnCheck
                         point.getDouble("latitude"),
                         point.getDouble("longitude"),
                         point.getInteger("state"));
+                if (point.getInteger("state") == 4) {
+                    warringUser(point.getInteger("user_id"), point.getString("username"), point.getString("warring_time"));
+                } else {
+                    warrings.remove(point.getInteger("user_id"));
+                }
             }
         }
     }
@@ -616,5 +698,37 @@ public class MainActivity extends BaseActivity implements CompoundButton.OnCheck
     public void onCheckedChanged(CompoundButton compoundButton, boolean checked) {
         Integer userId = (Integer)compoundButton.getTag();
         markManager.setVisible(userId, checked);
+    }
+
+    ////////////////
+    private void initPermission() {
+        String[] permissions = {
+                Manifest.permission.INTERNET,
+                Manifest.permission.ACCESS_NETWORK_STATE,
+                Manifest.permission.MODIFY_AUDIO_SETTINGS,
+                Manifest.permission.WRITE_SETTINGS,
+                Manifest.permission.ACCESS_WIFI_STATE,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE // demo使用
+        };
+
+        ArrayList<String> toApplyList = new ArrayList<String>();
+
+        for (String perm : permissions) {
+            if (PackageManager.PERMISSION_GRANTED != ContextCompat.checkSelfPermission(this, perm)) {
+                toApplyList.add(perm);
+                // 进入到这里代表没有权限.
+            }
+        }
+        String[] tmpList = new String[toApplyList.size()];
+        if (!toApplyList.isEmpty()) {
+            ActivityCompat.requestPermissions(this, toApplyList.toArray(tmpList), 123);
+        }
+
+    }
+
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        // 此处为android 6.0以上动态授权的回调，用户自行实现。
     }
 }

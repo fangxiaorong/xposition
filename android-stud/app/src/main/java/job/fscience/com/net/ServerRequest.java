@@ -50,6 +50,16 @@ public class ServerRequest {
         client.newCall(request).enqueue(callback);
     }
 
+    public void userUploadWarring(int userId, double latitude, double longitude, Callback callback) {
+        RequestBody body = new FormBody.Builder()
+                .add("latitude", "" + latitude)
+                .add("longitude", "" + longitude)
+                .add("user_id", "" + userId).build();
+
+        Request request = new Request.Builder().url(baseUrl + "/api/user/warring").post(body).build();
+        client.newCall(request).enqueue(callback);
+    }
+
 
     public static JSONObject parseJSON(Response response) {
         try {

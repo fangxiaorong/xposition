@@ -54,8 +54,18 @@
         <activity android:name=".AttributeActivity" android:screenOrientation="portrait" />
         <activity android:name=".UsersActivity" android:screenOrientation="portrait" />
         <activity android:name=".ExportActivity" android:screenOrientation="portrait" />
+        <activity android:name=".SettingsActivity" android:screenOrientation="portrait" />
+        <activity android:name=".AppDownloadActivity" android:screenOrientation="portrait" />
+        <activity android:name=".LineListActivity" android:screenOrientation="portrait" />
+        <activity android:name=".LineInfoActivity" android:screenOrientation="portrait" />
+        <activity android:name=".PointInfoActivity" android:screenOrientation="portrait" />
+        <activity android:name=".PointSelectActivity" android:screenOrientation="portrait" />
 
         <service android:name="com.amap.api.location.APSService"></service>
+        <service android:name=".service.DaemonService"
+            android:enabled="true"
+            android:exported="true"
+            android:process=":daemon_service"/>
     </application>
 
 </manifest>

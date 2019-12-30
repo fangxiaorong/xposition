@@ -77,16 +77,53 @@ public class PositionActivity extends AppCompatActivity {
                             mLatLng.latitude, mLatLng.longitude, 1, new Callback() {
                         @Override
                         public void onFailure(Call call, IOException e) {
+                            showTextOnUIThread("网络问题");
+                        }
+
+                        @Override
+                        public void onResponse(Call call, Response response) throws IOException {
+                            if (response.isSuccessful()) {
+                                JSONObject data = JSONObject.parseObject(response.body().string());
+                                if (data.getInteger("state") == 1) {
+                                    showTextOnUIThread("上报成功");
+                                } else {
+                                    showTextOnUIThread(data.getString("message"));
+                                }
+                            } else {
+                                showTextOnUIThread("服务器问题");
+                            }
+                        }
+                    });
+                } else {
+                    showTextOnUIThread("正在定位...");
+                }
+            }
+        });
+
+        findViewById(R.id.warring).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (mLatLng != null) {
+                    XApplication.getServerInstance().userUploadWarring(LoginActivity.userInfo.getInteger("id"), mLatLng.latitude, mLatLng.longitude, new Callback() {
+                        @Override
+                        public void onFailure(Call call, IOException e) {
                             showTextOnUIThread("网路问题");
                         }
 
                         @Override
                         public void onResponse(Call call, Response response) throws IOException {
-                            showTextOnUIThread("上报成功");
+                            if (response.isSuccessful()) {
+                                JSONObject data = JSONObject.parseObject(response.body().string());
+                                if (data.getInteger("state") == 1) {
+                                    showTextOnUIThread("报警成功");
+                                } else {
+                                    showTextOnUIThread(data.getString("message"));
+                                }
+                            } else {
+                                showTextOnUIThread("服务器问题");
+                            }
                         }
                     });
-                } else {
-                    showTextOnUIThread("正在定位...");
                 }
             }
         });

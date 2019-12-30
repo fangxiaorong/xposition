@@ -6,16 +6,15 @@
                 tools:context=".MainActivity" >
 
     <job.fscience.com.lib.SlidingUpPanelLayout
-            xmlns:sothree="http://schemas.android.com/apk/res-auto"
             android:id="@+id/sliding_layout"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:gravity="bottom"
-            sothree:panelHeight="48dp"
-            sothree:shadowHeight="4dp"
-            sothree:paralaxOffset="100dp"
-            sothree:overlay="false"
-            sothree:dragView="@+id/name">
+            custom:panelHeight="48dp"
+            custom:shadowHeight="4dp"
+            custom:paralaxOffset="100dp"
+            custom:overlay="false"
+            custom:dragView="@+id/name">
 
         <RelativeLayout
                 android:layout_width="match_parent"
@@ -24,18 +23,34 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:id="@+id/map" />
-            <TextView
-                    android:id="@+id/head"
-                    android:text="测试考官"
-                    android:textSize="24sp"
-                    android:textAlignment="center"
+            <LinearLayout
                     android:padding="10dp"
                     android:layout_marginHorizontal="30dp"
+                    android:orientation="horizontal"
                     android:layout_marginTop="10dp"
-                    android:background="@drawable/head_shadow"
-                    android:drawableLeft="@mipmap/ic_launcher"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"/>
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical">
+                <ImageView
+                        android:id="@+id/setting"
+                        android:padding="1px"
+                        android:background="@drawable/circle_bg"
+                        android:backgroundTint="@android:color/darker_gray"
+                        android:src="@mipmap/ic_launcher"
+                        android:layout_marginRight="5dp"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"/>
+                <TextView
+                        android:id="@+id/head"
+                        android:text="测试考官"
+                        android:textSize="24sp"
+                        android:padding="3dp"
+                        android:textAlignment="center"
+                        android:background="@drawable/head_shadow"
+                        android:layout_weight="1"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"/>
+            </LinearLayout>
         </RelativeLayout>
 
         <LinearLayout

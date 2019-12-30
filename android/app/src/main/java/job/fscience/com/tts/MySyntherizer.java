@@ -1,4 +1,4 @@
-package com.baidu.tts.sample.control;
+package job.fscience.com.tts;
 
 import android.content.Context;
 import android.os.Handler;
@@ -9,7 +9,6 @@ import android.util.Pair;
 import com.baidu.tts.client.SpeechSynthesizeBag;
 import com.baidu.tts.client.SpeechSynthesizer;
 import com.baidu.tts.client.SpeechSynthesizerListener;
-import com.baidu.tts.sample.MainHandlerConstant;
 
 import java.util.ArrayList;
 import java.util.List;

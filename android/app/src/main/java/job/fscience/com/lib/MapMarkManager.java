@@ -5,6 +5,7 @@ import android.graphics.*;
 import android.text.TextPaint;
 import android.view.animation.LinearInterpolator;
 import com.amap.api.maps.AMap;
+import com.amap.api.maps.model.BitmapDescriptor;
 import com.amap.api.maps.model.BitmapDescriptorFactory;
 import com.amap.api.maps.model.LatLng;
 import com.amap.api.maps.model.Marker;
@@ -13,6 +14,7 @@ import com.amap.api.maps.model.animation.Animation;
 import com.amap.api.maps.model.animation.RotateAnimation;
 import job.fscience.com.xposition.R;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -20,12 +22,14 @@ public class MapMarkManager {
     public static final int USER_STATE_ONLINE = 1;
     public static final int USER_STATE_OFFLINE = 2;
     public static final int USER_STATE_DEADLINE = 3;
+    public static final int USER_STATE_WARRING = 4;
 
     private AMap map;
     private Context context;
 
     Map<String, Bitmap> iconMap = new HashMap<>();
     Map<String, Bitmap> usersBitmap = new HashMap<>();
+    Map<String, ArrayList<BitmapDescriptor>> warringBitmap = new HashMap<>();
 
     public MapMarkManager(Context context, AMap map) {
         this.map = map;
@@ -66,6 +70,35 @@ public class MapMarkManager {
         return userBitmap;
     }
 
+    private ArrayList<BitmapDescriptor> getWarringBitmapArray(String userName) {
+        if (warringBitmap.containsKey(userName)) {
+            return warringBitmap.get(userName);
+        } else {
+            ArrayList<BitmapDescriptor> results = new ArrayList<>();
+            for (int idx = 1; idx < 6; idx++) {
+                Bitmap bitmap = Bitmap.createBitmap(50, 50, Bitmap.Config.ARGB_8888);
+                bitmap.setHasAlpha(true);
+                Canvas canvas = new Canvas(bitmap);
+                canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
+                Paint paint = new Paint();
+                paint.setColor(Color.RED);
+                paint.setStyle(Paint.Style.STROKE);
+                paint.setStrokeWidth(2);
+                canvas.drawCircle(25, 25, 8 * (idx % 4), paint);
+                TextPaint textPaint = new TextPaint();
+                textPaint.setAntiAlias(true);
+                textPaint.setTextSize(22f);
+                textPaint.setTextAlign(Paint.Align.CENTER);
+                textPaint.setColor(Color.BLUE);
+                canvas.drawText(userName, bitmap.getWidth() / 2, bitmap.getHeight() / 2 + 10, textPaint);
+                results.add(BitmapDescriptorFactory.fromBitmap(bitmap));
+            }
+            warringBitmap.put(userName, results);
+
+            return results;
+        }
+    }
+
     Map<Integer, Marker> userMap = new HashMap<>();
     public Map<Integer, Boolean> userVisibleMap = new HashMap<>();
     public void updateUser(Integer userId, String userName, Double latitude, Double longitude, Integer state) {
@@ -81,6 +114,9 @@ public class MapMarkManager {
                     marker.setIcon(BitmapDescriptorFactory.fromBitmap(getUserBitmap(userName, state == USER_STATE_ONLINE)));
                 }
             }
+            if (state == USER_STATE_WARRING) {
+                marker.setIcons(getWarringBitmapArray(userName));
+            }
             if (state != USER_STATE_DEADLINE) {
                 marker.setPosition(new LatLng(latitude, longitude));
             }
@@ -90,6 +126,8 @@ public class MapMarkManager {
             markerOption.icon(BitmapDescriptorFactory.fromBitmap(getUserBitmap(userName, state == USER_STATE_ONLINE)));
             // 将Marker设置为贴地显示，可以双指下拉地图查看效果
             markerOption.setFlat(true);//设置marker平贴地图效果
+//            markerOption.icons(getWarringBitmapArray(userName));
+            markerOption.period(6);
             marker = map.addMarker(markerOption);
             userMap.put(userId, marker);
             if (state == USER_STATE_DEADLINE) {

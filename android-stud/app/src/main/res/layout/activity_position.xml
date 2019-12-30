@@ -21,15 +21,33 @@
             android:layout_height="wrap_content"/>
 
     <TextView
+        android:id="@+id/mark"
+        android:layout_centerHorizontal="true"
+        android:layout_width="0px"
+        android:layout_height="1px" />
+    <TextView
             android:id="@+id/upload"
             android:text="上报"
             android:textColor="@android:color/white"
             android:gravity="center"
             android:textSize="28sp"
             android:layout_marginBottom="24dp"
+        android:layout_toLeftOf="@id/mark"
             android:layout_alignParentBottom="true"
-            android:layout_centerHorizontal="true"
             android:background="@drawable/upload_shadow"
             android:layout_width="80sp"
             android:layout_height="80sp"/>
+    <TextView
+        android:id="@+id/warring"
+        android:text="报警"
+        android:textColor="@android:color/white"
+        android:background="@drawable/warring_shadow"
+        android:textSize="28sp"
+        android:gravity="center"
+        android:layout_marginBottom="24dp"
+        android:layout_marginLeft="10dp"
+        android:layout_toRightOf="@id/mark"
+        android:layout_alignParentBottom="true"
+        android:layout_width="80sp"
+        android:layout_height="80sp" />
 </RelativeLayout>

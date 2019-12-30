@@ -118,6 +118,15 @@ public class ServerRequest {
         client.newCall(request).enqueue(callback);
     }
 
+    public void adminGetExamLines(Callback callback) {
+        Request request = new Request.Builder().url(baseUrl + "/api/admin/examline/list").build();
+        client.newCall(request).enqueue(callback);
+    }
+
+    public void adminGetExamLine(int lineId, Callback callback) {
+        Request request = new Request.Builder().url(baseUrl + "/api/admin/examline?lineid=" + lineId).build();
+        client.newCall(request).enqueue(callback);
+    }
 
     public static JSONObject parseJSON(Response response) {
         try {
