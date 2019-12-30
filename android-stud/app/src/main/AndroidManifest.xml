@@ -51,6 +51,10 @@
         <service android:name="job.fscience.com.server.PositionService"/>
         <service android:name="job.fscience.com.lib.LocationForegoundService" />
         <service android:name="com.amap.api.location.APSService"></service>
+        <service android:name=".DaemonService"
+            android:enabled="true"
+            android:exported="true"
+            android:process=":daemon_service"/>
     </application>
 
 </manifest>
