@@ -171,6 +171,7 @@ class UserAutoLogin(BaseHandler):
 @app.route(r'/api/user/position')
 class UserUploadPosition(web.RequestHandler):
     def post(self):
+        result = None
         exam_id = table_manager(Exam).get_active_id()
         if exam_id:
             user_record = table_manager(UserRecord, str(exam_id), False)
@@ -180,11 +181,47 @@ class UserUploadPosition(web.RequestHandler):
                 longitude = float(self.get_argument('longitude'))
                 manual = int(self.get_argument('manual'))
                 user_record.add_record(user_id, latitude, longitude, manual)
+            else:
+                result = '无考试记录'
+        else:
+            result = '未找到考试记录'
 
-        self.write(json.dumps({
-            'state': 1,
-            'message': '成功',
-        }))
+        if result is None:
+            self.write(json.dumps({
+                'state': 1,
+                'message': '成功'
+            }))
+        else:
+            self.write(json.dumps({
+                'state': 10,
+                'message': result
+            }))
+
+@app.route(r'/api/user/warring')
+class UserWarring(web.RequestHandler):
+    def post(self):
+        result = None
+        exam_id = table_manager(Exam).get_active_id()
+        if exam_id:
+            user_record = table_manager(UserRecord, str(exam_id), False)
+            if user_record:
+                result = user_record.add_warring(user_id, latitude, longitude)
+            else:
+                result = '无考试记录'
+        else:
+            result = '未找到考试记录'
+
+        if result is None:
+            self.write(json.dumps({
+                'state': 1,
+                'message': '成功'
+            }))
+        else:
+            self.write(json.dumps({
+                'state': 10,
+                'message': result
+            }))
+
 
 @app.route(r'/api/user/line/(\d+)')
 class UserGetLine(web.RequestHandler):

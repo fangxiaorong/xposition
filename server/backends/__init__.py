@@ -409,16 +409,28 @@ class ExamUser(BaseTable):
         if active_id == exam_id:
             user_pos_arr = r_conn.hgetall('active_user_info')
             current_time = time.time()
+
+            user_array = []
+            user_id_array = []
             for user_pos in user_pos_arr.values():
                 user_pos = user_pos.decode('utf-8')
                 if user_pos != '':
                     pos_info = json.loads(user_pos)
+                    user_array.append(pos_info)
+                    user_id_array.append('user_warring_' + str(pos_info.get('user_id')))
+            warrings = r_conn.mget(user_id_array)
+
+            for info in zip(user_array, warrings):
+                pos_info = info[0]
+                if info[1] is not None:
+                    pos_info.update({'state': 3})
+                else:
                     tmp_time = float(pos_info.get('create_time')) if pos_info.get('create_time') else 0
                     if current_time - tmp_time < 300:
                         pos_info.update({'state': 1})
                     else:
                         pos_info.update({'state': 2})
-                    result.append(pos_info)
+                result.append(pos_info)
         else:
             with CursorManager() as cursor:
                 users = self.query_records(cursor, exam_id=exam_id)
@@ -496,6 +508,7 @@ class UserRecord(BaseTable):
         super(UserRecord, self).__init__('user_record_' + ext_name)
         self.record_prefix = 'user_pos_'
         self.active_user_info_key = 'active_user_info'
+        self.warring_prefix = 'user_warring_'
     
     def create_table(self):
         conn.execute('''
@@ -511,7 +524,7 @@ class UserRecord(BaseTable):
 
     def add_record(self, user_id, latitude, longitude, manual=0):
         if latitude <= 0 or longitude <= 0:
-            return
+            return '坐标点信息错误'
 
         key = self.record_prefix + str(user_id)
 
@@ -535,6 +548,19 @@ class UserRecord(BaseTable):
                         self._new_records(cursor, ['user_id', 'latitude', 'longitude', 'manual', 'create_time'], pos_infos)
                 else:
                     r_conn.rpush(key, pos_str)
+
+                return None
+            else:
+                return '没有考试路径'
+        else:
+            return '考试用户未找到'
+
+    def add_warring(self, user_id, latitude, longitude):
+        result = self.add_record(user_id, latitude, longitude)
+        if result is None:
+            r_conn.setex(self.warring_prefix + str(user_id), '%f,%f' % (longitude, latitude), 300)
+        return None
+
 
     def direct_query_records(self, user_id, max_id=None, start=None, end=None, **kwargs):
         result = []
